@@ -1,4 +1,3 @@
-use anyhow::format_err;
 use anyhow::Result;
 use crossbeam_channel::Sender;
 use lsp_server::{Connection, Message, Notification};
@@ -44,9 +43,6 @@ fn on_notification(msg_sender: &Sender<Message>, notif: Notification) -> Result<
     let notif = match notification_cast::<DidOpenTextDocument>(notif) {
         Ok(params) => {
             let uri = params.text_document.uri;
-            uri.to_file_path()
-                .map_err(|_| format_err!("invalid uri: {}", uri))?;
-
             let params = PublishDiagnosticsParams::new(uri, vec![], None);
             let diag_notif = notification_new::<PublishDiagnostics>(params);
 
@@ -59,9 +55,6 @@ fn on_notification(msg_sender: &Sender<Message>, notif: Notification) -> Result<
     let notif = match notification_cast::<DidChangeTextDocument>(notif) {
         Ok(params) => {
             let uri = params.text_document.uri;
-            uri.to_file_path()
-                .map_err(|_| format_err!("invalid uri: {}", uri))?;
-
             let params = PublishDiagnosticsParams::new(uri, vec![], None);
             let diag_notif = notification_new::<PublishDiagnostics>(params);
 
@@ -72,10 +65,7 @@ fn on_notification(msg_sender: &Sender<Message>, notif: Notification) -> Result<
         Err(notif) => notif,
     };
     let notif = match notification_cast::<DidCloseTextDocument>(notif) {
-        Ok(params) => {
-            let uri = params.text_document.uri;
-            uri.to_file_path()
-                .map_err(|_| format_err!("invalid uri: {}", uri))?;
+        Ok(_) => {
             return Ok(());
         }
         Err(notif) => notif,
