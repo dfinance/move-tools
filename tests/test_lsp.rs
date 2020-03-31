@@ -3,8 +3,8 @@ use lsp_server::{Connection, Message, Notification, Request, RequestId};
 use lsp_types::notification::{DidCloseTextDocument, DidOpenTextDocument, PublishDiagnostics};
 use lsp_types::{
     Diagnostic, DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
-    InitializeResult, TextDocumentIdentifier, TextDocumentItem, TextDocumentSyncCapability,
-    TextDocumentSyncKind, Url, VersionedTextDocumentIdentifier,
+    InitializeResult, TextDocumentContentChangeEvent, TextDocumentIdentifier, TextDocumentItem,
+    TextDocumentSyncCapability, TextDocumentSyncKind, Url, VersionedTextDocumentIdentifier,
 };
 
 use move_language_server::main_loop::{main_loop, notification_cast, notification_new};
@@ -174,7 +174,11 @@ fn test_send_diagnostics_after_didchange() {
         "textDocument/didChange".to_string(),
         DidChangeTextDocumentParams {
             text_document,
-            content_changes: vec![],
+            content_changes: vec![TextDocumentContentChangeEvent {
+                text: "fun main() {}".to_string(),
+                range: None,
+                range_length: None,
+            }],
         },
     );
     client_conn

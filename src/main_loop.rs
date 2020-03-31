@@ -1,10 +1,11 @@
+use crate::compiler::parser::parse_and_extract_diagnostics;
 use anyhow::Result;
 use crossbeam_channel::Sender;
 use lsp_server::{Connection, Message, Notification};
 use lsp_types::notification::{
     DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, PublishDiagnostics,
 };
-use lsp_types::PublishDiagnosticsParams;
+use lsp_types::{Diagnostic, PublishDiagnosticsParams};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -55,7 +56,12 @@ fn on_notification(msg_sender: &Sender<Message>, notif: Notification) -> Result<
     let notif = match notification_cast::<DidChangeTextDocument>(notif) {
         Ok(params) => {
             let uri = params.text_document.uri;
-            let params = PublishDiagnosticsParams::new(uri, vec![], None);
+            let new_source_text = &params.content_changes.get(0).unwrap().text;
+            let mut diagnostics: Vec<Diagnostic> = vec![];
+            if let Err(diags) = parse_and_extract_diagnostics("main.mvir", new_source_text) {
+                diagnostics = diags;
+            }
+            let params = PublishDiagnosticsParams::new(uri, diagnostics, None);
             let diag_notif = notification_new::<PublishDiagnostics>(params);
 
             log::info!("Sending {:?}", &diag_notif);
@@ -73,7 +79,7 @@ fn on_notification(msg_sender: &Sender<Message>, notif: Notification) -> Result<
     if notif.method.starts_with("$/") {
         return Ok(());
     }
-    log::error!("unhandled notification: {:?}", notif);
+    // log::error!("unhandled notification: {:?}", notif);
     Ok(())
 }
 
