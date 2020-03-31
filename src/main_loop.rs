@@ -1,10 +1,8 @@
 use anyhow::Result;
 use crossbeam_channel::Sender;
 use lsp_server::{Connection, Message, Notification};
-use lsp_types::notification::{
-    DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, PublishDiagnostics,
-};
-use lsp_types::PublishDiagnosticsParams;
+use lsp_types::notification::{DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument};
+
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -44,22 +42,19 @@ fn loop_turn(connection: &Connection, message: Message) -> Result<()> {
 fn on_notification(msg_sender: &Sender<Message>, notif: Notification) -> Result<()> {
     let notif = match notification_cast::<DidOpenTextDocument>(notif) {
         Ok(params) => {
-            let uri = params.text_document.uri;
-            let params = PublishDiagnosticsParams::new(uri, vec![], None);
-            let diag_notif = notification_new::<PublishDiagnostics>(params);
-
-            log::info!("Sending {:?}", &diag_notif);
-            msg_sender.send(diag_notif.into()).unwrap();
+            let source_text = params.text_document.text;
+            if let Err(not) = handlers::on_document_change(params.text_document.uri, &source_text) {
+                log::info!("Sending {:?}", &not);
+                msg_sender.send(not.into()).unwrap();
+            }
             return Ok(());
         }
         Err(notif) => notif,
     };
     let notif = match notification_cast::<DidChangeTextDocument>(notif) {
         Ok(params) => {
-            let new_source_text = &params.content_changes.get(0).unwrap().text;
-            if let Err(not) =
-                handlers::on_document_change(params.text_document.uri, new_source_text)
-            {
+            let source_text = &params.content_changes.get(0).unwrap().text;
+            if let Err(not) = handlers::on_document_change(params.text_document.uri, source_text) {
                 log::info!("Sending {:?}", &not);
                 msg_sender.send(not.into()).unwrap();
             }

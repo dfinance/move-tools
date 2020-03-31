@@ -151,7 +151,7 @@ fn test_server_publishes_diagnostic_after_receiving_didopen() {
         document_url.clone(),
         "move".to_string(),
         1,
-        "mytext".to_string(),
+        "main() {}".to_string(),
     );
     let didopen_params = DidOpenTextDocumentParams { text_document };
     let didopen_notif = notification_new::<DidOpenTextDocument>(didopen_params);
@@ -161,8 +161,14 @@ fn test_server_publishes_diagnostic_after_receiving_didopen() {
     main_loop(&server_conn).unwrap();
 
     let diagnostics_message = client_conn.receiver.try_recv().unwrap();
-    assert_diagnostics(diagnostics_message, document_url, vec![]);
-
+    assert_diagnostics(
+        diagnostics_message,
+        document_url,
+        vec![Diagnostic::new_simple(
+            Range::new(Position::new(0, 0), Position::new(0, 4)),
+            "Invalid address directive. Expected 'address' got 'main'".to_string(),
+        )],
+    );
     assert_receiver_has_only_shutdown_response(client_conn.receiver);
 }
 
