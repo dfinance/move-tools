@@ -4,18 +4,19 @@ use lsp_server::{Connection, Message, Notification, Request, RequestId, Response
 use lsp_types::notification::{
     DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, PublishDiagnostics,
 };
+use lsp_types::request::Initialize;
 use lsp_types::{
-    Diagnostic, DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
-    InitializeResult, Position, Range, TextDocumentContentChangeEvent, TextDocumentIdentifier,
-    TextDocumentItem, TextDocumentSyncCapability, TextDocumentSyncKind, Url,
-    VersionedTextDocumentIdentifier,
+    ClientCapabilities, Diagnostic, DidChangeTextDocumentParams, DidCloseTextDocumentParams,
+    DidOpenTextDocumentParams, InitializeParams, InitializeResult, Position, Range,
+    TextDocumentContentChangeEvent, TextDocumentIdentifier, TextDocumentItem,
+    TextDocumentSyncCapability, TextDocumentSyncKind, Url, VersionedTextDocumentIdentifier,
 };
 
 use move_language_server::config::{MoveDialect, ServerConfig};
 use move_language_server::main_loop::{
-    get_config, loop_turn, main_loop, notification_cast, notification_new, LoopState,
+    get_config, loop_turn, main_loop, notification_cast, notification_new, request_new, LoopState,
 };
-use move_language_server::server::initialize_server;
+use move_language_server::server::{from_json, initialize_server, parse_initialize_params};
 use move_language_server::world::WorldState;
 
 fn setup_test_logging() {
@@ -85,11 +86,11 @@ fn test_server_returns_successful_response_on_initialization() {
     ));
     client_conn.sender.send(initialize_req).unwrap();
 
-    let initialized_notif = Message::Notification(Notification::new(
+    let initialized_not = Message::Notification(Notification::new(
         "initialized".to_string(),
         serde_json::json!({}),
     ));
-    client_conn.sender.send(initialized_notif).unwrap();
+    client_conn.sender.send(initialized_not).unwrap();
 
     initialize_server(&server_conn).unwrap();
 
@@ -236,7 +237,33 @@ fn test_send_nothing_after_didclose() {
 }
 
 #[test]
-fn test_deserialize_client_configuration() {
+fn test_initialize_server_configuration() {
+    setup_test_logging();
+    let (server_conn, client_conn) = Connection::memory();
+
+    let mut initialize_params = from_json::<InitializeParams>(
+        "InitializeParams",
+        serde_json::json!({ "capabilities": serde_json::to_value(ClientCapabilities::default()).unwrap() }),
+    )
+    .unwrap();
+    initialize_params.initialization_options = Some(serde_json::json!({"dialect": "dfinance"}));
+
+    let initialize_req = request_new::<Initialize>(RequestId::from(1), initialize_params);
+    client_conn.sender.send(initialize_req.into()).unwrap();
+
+    let initialized_not = Message::Notification(Notification::new(
+        "initialized".to_string(),
+        serde_json::json!({}),
+    ));
+    client_conn.sender.send(initialized_not).unwrap();
+
+    let init_params = initialize_server(&server_conn).unwrap();
+    let server_config = parse_initialize_params(init_params, &server_conn).unwrap();
+    assert_eq!(server_config.dialect, MoveDialect::DFinance);
+}
+
+#[test]
+fn test_update_server_configuration_from_the_client() {
     setup_test_logging();
     let (server_conn, _) = Connection::memory();
 

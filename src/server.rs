@@ -19,23 +19,19 @@ pub fn initialize_server(connection: &Connection) -> Result<serde_json::Value, P
     connection.initialize(serde_json::to_value(server_capabilities).unwrap())
 }
 
-pub fn run_server() -> Result<()> {
-    let (connection, io_threads) = Connection::stdio();
-    log::info!("Transport is created, stdin and stdout are connected");
-
-    let initialize_params = initialize_server(&connection)?;
-    let initialize_params =
-        from_json::<lsp_types::InitializeParams>("InitializeParams", initialize_params)?;
-    log::info!("Initialization is finished");
-
-    if let Some(client_info) = initialize_params.client_info {
+pub fn parse_initialize_params(
+    init_params: serde_json::Value,
+    connection: &Connection,
+) -> Result<ServerConfig> {
+    let init_params = from_json::<lsp_types::InitializeParams>("InitializeParams", init_params)?;
+    if let Some(client_info) = init_params.client_info {
         log::info!(
             "Client '{}' {}",
             client_info.name,
             client_info.version.unwrap_or_default()
         );
     }
-    let server_config = initialize_params
+    let server_config = init_params
         .initialization_options
         .and_then(|v| {
             from_json::<ServerConfig>("config", v)
@@ -50,6 +46,16 @@ pub fn run_server() -> Result<()> {
                 .ok()
         })
         .unwrap_or_default();
+    Ok(server_config)
+}
+
+pub fn run_server() -> Result<()> {
+    let (connection, io_threads) = Connection::stdio();
+    log::info!("Transport is created, stdin and stdout are connected");
+
+    let init_params = initialize_server(&connection)?;
+    let server_config = parse_initialize_params(init_params, &connection)?;
+    log::info!("Initialization is finished");
 
     main_loop::main_loop(server_config, &connection)?;
     io_threads.join()?;

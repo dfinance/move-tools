@@ -172,7 +172,7 @@ where
     Notification::new(N::METHOD.to_string(), params)
 }
 
-fn request_new<R>(id: RequestId, params: R::Params) -> Request
+pub fn request_new<R>(id: RequestId, params: R::Params) -> Request
 where
     R: lsp_types::request::Request,
     R::Params: Serialize,
