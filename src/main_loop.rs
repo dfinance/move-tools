@@ -6,7 +6,7 @@ use lsp_types::notification::{
     ShowMessage,
 };
 use lsp_types::request::WorkspaceConfiguration;
-use lsp_types::{ConfigurationParams, MessageType, ShowMessageParams};
+use lsp_types::{ConfigurationItem, ConfigurationParams, MessageType, ShowMessageParams};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -77,8 +77,10 @@ pub fn loop_turn(
             if Some(&resp.id) == loop_state.configuration_request_id.as_ref() {
                 loop_state.configuration_request_id = None;
                 log::info!("config update response: '{:?}", resp);
+
                 let Response { error, result, .. } = resp;
                 let parsed_config_val = result.map(serde_json::from_value::<Vec<ServerConfig>>);
+
                 match (error, parsed_config_val) {
                     (Some(err), _) => log::error!("failed to fetch the server settings: {:?}", err),
                     (None, Some(Ok(new_config))) => {
@@ -138,10 +140,17 @@ fn on_notification(
             // As stated in https://github.com/microsoft/language-server-protocol/issues/676,
             // this notification's parameters should be ignored and the actual config queried separately.
             let request_id = loop_state.next_request_id();
+            let config_item = ConfigurationItem {
+                section: Some("move".to_string()),
+                scope_uri: None,
+            };
             let request = request_new::<WorkspaceConfiguration>(
                 request_id.clone(),
-                ConfigurationParams::default(),
+                ConfigurationParams {
+                    items: vec![config_item],
+                },
             );
+            log::info!("Sending config request: {:?}", &request);
             msg_sender.send(request.into())?;
             loop_state.configuration_request_id = Some(request_id);
 
