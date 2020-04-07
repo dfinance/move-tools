@@ -1,9 +1,12 @@
 # move-language-server
-Implementation of Language Server protocol for Move language
+Implementation of Language Server Protocol for [Move language](https://developers.libra.org/docs/crates/move-language).
 
 ```shell script
 RUST_LOG=info cargo run --bin move-language-server
 ```
+
+Features:
+* check source code files while editing with the official compiler
 
 For the corresponding VSCode extension, see https://marketplace.visualstudio.com/items?itemName=damirka.move-ide
 
