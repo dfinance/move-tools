@@ -5,6 +5,8 @@ Implementation of Language Server protocol for Move language
 RUST_LOG=info cargo run --bin move-language-server
 ```
 
+For the corresponding VSCode extension, see https://marketplace.visualstudio.com/items?itemName=damirka.move-ide
+
 ## Configuration
 
 `dialect` - dialect of the Move language. Either `move` (for original Libra version) or `dfinance` (bech32 addresses and some other stuff). Default is `move`.
