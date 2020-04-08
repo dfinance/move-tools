@@ -26,7 +26,6 @@ impl Analysis {
     }
 
     pub fn apply_change(&mut self, change: AnalysisChange) {
-        log::info!("apply_change {:?}", change);
         for (fname, new_text) in change.files_changed {
             self.available_module_files.insert(fname, new_text);
         }

@@ -23,18 +23,22 @@ pub fn check_with_compiler(
     let parsed_file = parser::parse_source_file(current_file, source_text)?;
 
     // TODO: skip this step by making ModuleDefinition Clone'able, and move it to after expansion
-    let current_file = match fs::canonicalize(current_file) {
+    let current_fname = match fs::canonicalize(current_file) {
         Ok(file) => file,
         Err(_) => {
-            log::error!("Passed current file path is not a valid fs path");
+            log::error!("Not a valid filesystem path {:?}", current_file);
             PathBuf::new()
         }
-    };
+    }
+    .into_os_string()
+    .into_string()
+    .unwrap();
+
     let module_definitions: Vec<FileDefinition> = world_state
         .analysis
         .available_module_files()
         .iter()
-        .filter(|(fname, _)| **fname != current_file.to_str().unwrap())
+        .filter(|(fname, _)| **fname != current_fname)
         .map(|(fname, text)| parse_file_string(fname, text).unwrap())
         .collect();
     let parsed_program = libra_parser::ast::Program {
