@@ -2,7 +2,6 @@ use std::fs;
 use std::path::PathBuf;
 
 use lsp_types::Diagnostic;
-
 use move_lang::parser as libra_parser;
 use move_lang::parser::ast::FileDefinition;
 use move_lang::parser::syntax::parse_file_string;
@@ -32,7 +31,8 @@ pub fn check_with_compiler(
         }
     };
     let module_definitions: Vec<FileDefinition> = world_state
-        .available_module_files
+        .analysis
+        .available_module_files()
         .iter()
         .filter(|(fname, _)| **fname != current_file.to_str().unwrap())
         .map(|(fname, text)| parse_file_string(fname, text).unwrap())
