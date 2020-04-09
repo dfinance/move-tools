@@ -10,8 +10,15 @@ fn loc_into_range(
     fname_to_file_id: &HashMap<&'static str, FileId>,
     location: Loc,
 ) -> Range {
-    let file_id = fname_to_file_id.get(location.file()).unwrap();
-    codespan_lsp::byte_span_to_range(files, *file_id, location.span()).unwrap()
+    let file_id = fname_to_file_id.get(location.file()).unwrap_or_else(|| {
+        panic!(
+            "Key {:?} not found in fname_to_file_id mapping. Keys are {:?}",
+            location.file(),
+            fname_to_file_id.keys()
+        )
+    });
+    codespan_lsp::byte_span_to_range(files, *file_id, location.span())
+        .expect("Cannot convert codespan::Span from libra compiler into lsp::Range type")
 }
 
 pub fn libra_error_into_diagnostic(files: &FilesSourceText, error: Error) -> Diagnostic {
