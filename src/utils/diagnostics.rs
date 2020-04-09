@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
-use crate::compiler::utils::get_canonical_fname;
 use codespan::{FileId, Files};
 use lsp_types::{Diagnostic, DiagnosticRelatedInformation, Location, Range, Url};
 use move_ir_types::location::Loc;
 use move_lang::errors::{Error, FilesSourceText};
+
+use crate::compiler::utils::get_canonical_fname;
 
 fn loc_into_range(
     files: &Files<String>,
@@ -17,7 +18,7 @@ fn loc_into_range(
         .unwrap_or_else(|| {
             panic!(
                 "Key {:?} not found in fname_to_file_id mapping. Keys are {:?}",
-                location.file(),
+                canonical_location_file,
                 fname_to_file_id.keys()
             )
         });
