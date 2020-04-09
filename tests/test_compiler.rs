@@ -9,10 +9,6 @@ use move_language_server::config::Config;
 use move_language_server::test_utils::{get_modules_path, get_stdlib_path};
 use move_language_server::world::WorldState;
 
-fn range(start: (u64, u64), end: (u64, u64)) -> Range {
-    Range::new(Position::new(start.0, start.1), Position::new(end.0, end.1))
-}
-
 // just need some valid fname
 fn existing_file_abspath() -> &'static str {
     let abspath = std::env::current_dir()
@@ -25,6 +21,10 @@ fn existing_file_abspath() -> &'static str {
     leak_str(&abspath)
 }
 
+fn range(start: (u64, u64), end: (u64, u64)) -> Range {
+    Range::new(Position::new(start.0, start.1), Position::new(end.0, end.1))
+}
+
 #[test]
 fn test_fail_on_non_ascii_character() {
     let source_text = r"fun main() { return; }ффф";
@@ -34,10 +34,7 @@ fn test_fail_on_non_ascii_character() {
     assert_eq!(errors.len(), 1);
 
     let error = errors.get(0).unwrap();
-    assert_eq!(
-        error.range,
-        Range::new(Position::new(0, 22), Position::new(0, 22))
-    );
+    assert_eq!(error.range, range((0, 22), (0, 22)));
 }
 
 #[test]
@@ -58,8 +55,8 @@ fn test_function_parse_error() {
     assert_eq!(errors.len(), 1);
 
     let error = errors.get(0).unwrap();
-    assert_eq!(error.range, range((0, 11), (0, 16)));
     assert_eq!(error.message, "Unexpected 'struc'");
+    assert_eq!(error.range, range((0, 11), (0, 16)));
 }
 
 #[test]
@@ -71,13 +68,10 @@ fn test_main_function_parse_error() {
     assert_eq!(errors.len(), 1);
     let error = errors.get(0).unwrap();
     assert_eq!(
-        error.range,
-        Range::new(Position::new(0, 0), Position::new(0, 4))
-    );
-    assert_eq!(
         error.message,
         "Invalid address directive. Expected 'address' got 'main'"
     );
+    assert_eq!(error.range, range((0, 0), (0, 4)));
 }
 
 #[test]
@@ -95,10 +89,7 @@ module M {
     assert_eq!(errors.len(), 1);
 
     let error = errors.get(0).unwrap();
-    assert_eq!(
-        error.range,
-        Range::new(Position::new(2, 4), Position::new(2, 9))
-    );
+    assert_eq!(error.range, range((2, 4), (2, 9)));
 }
 
 #[test]
@@ -116,11 +107,11 @@ fn test_expansion_checks_duplicates() {
     assert_eq!(errors.len(), 1);
 
     let diagnostic = errors.get(0).unwrap();
-    assert_eq!(diagnostic.range, range((3, 8), (3, 9)));
     assert_eq!(
         diagnostic.message,
         "Duplicate definition for field \'f\' in struct \'S\'"
     );
+    assert_eq!(diagnostic.range, range((3, 8), (3, 9)));
 }
 
 #[test]
@@ -134,13 +125,10 @@ fn test_expansion_checks_public_main_redundancy() {
 
     let diagnostic = errors.get(0).unwrap();
     assert_eq!(
-        diagnostic.range,
-        Range::new(Position::new(0, 0), Position::new(0, 6))
-    );
-    assert_eq!(
         diagnostic.message,
         "Extraneous 'public' modifier. This top-level function is assumed to be public"
     );
+    assert_eq!(diagnostic.range, range((0, 0), (0, 6)));
 }
 
 #[test]
@@ -157,13 +145,10 @@ fn test_naming_checks_generics_with_type_parameters() {
 
     let diagnostic = errors.get(0).unwrap();
     assert_eq!(
-        diagnostic.range,
-        Range::new(Position::new(1, 21), Position::new(1, 27))
-    );
-    assert_eq!(
         diagnostic.message,
         "Generic type parameters cannot take type arguments"
     );
+    assert_eq!(diagnostic.range, range((1, 21), (1, 27)));
 }
 
 #[test]
@@ -181,11 +166,8 @@ fn test_typechecking_invalid_local_borrowing() {
     assert_eq!(errors.len(), 1);
 
     let diagnostic = errors.get(0).unwrap();
-    assert_eq!(
-        diagnostic.range,
-        Range::new(Position::new(2, 8), Position::new(2, 10))
-    );
     assert_eq!(diagnostic.message, "Invalid borrow");
+    assert_eq!(diagnostic.range, range((2, 8), (2, 10)));
 }
 
 #[test]
@@ -215,10 +197,11 @@ fn test_check_unreachable_code_in_loop() {
 
     let diagnostic = errors.get(0).unwrap();
     assert_eq!(
-        diagnostic.range,
-        Range::new(Position::new(8, 42), Position::new(8, 43))
+        diagnostic.message,
+        "Unreachable code. This statement (and any following statements) will not be executed. \
+        In some cases, this will result in unused resource values."
     );
-    assert_eq!(diagnostic.message, "Unreachable code. This statement (and any following statements) will not be executed. In some cases, this will result in unused resource values.");
+    assert_eq!(diagnostic.range, range((8, 42), (8, 43)));
 }
 
 #[test]
