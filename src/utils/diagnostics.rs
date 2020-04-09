@@ -5,23 +5,18 @@ use lsp_types::{Diagnostic, DiagnosticRelatedInformation, Location, Range, Url};
 use move_ir_types::location::Loc;
 use move_lang::errors::{Error, FilesSourceText};
 
-use crate::compiler::utils::get_canonical_fname;
-
 fn loc_into_range(
     files: &Files<String>,
     fname_to_file_id: &HashMap<&'static str, FileId>,
     location: Loc,
 ) -> Range {
-    let canonical_location_file = get_canonical_fname(location.file());
-    let file_id = fname_to_file_id
-        .get(canonical_location_file)
-        .unwrap_or_else(|| {
-            panic!(
-                "Key {:?} not found in fname_to_file_id mapping. Keys are {:?}",
-                canonical_location_file,
-                fname_to_file_id.keys()
-            )
-        });
+    let file_id = fname_to_file_id.get(location.file()).unwrap_or_else(|| {
+        panic!(
+            "Key {:?} not found in fname_to_file_id mapping. Keys are {:?}",
+            location.file(),
+            fname_to_file_id.keys()
+        )
+    });
     codespan_lsp::byte_span_to_range(files, *file_id, location.span())
         .expect("Cannot convert codespan::Span from libra compiler into lsp::Range type")
 }
