@@ -50,3 +50,7 @@ pub fn get_module_files(modules_folder: &Path) -> FilesSourceText {
     }
     lib_files
 }
+
+pub fn get_canonical_fname<P: AsRef<Path>>(path: P) -> &'static str {
+    leak_str(fs::canonicalize(path).unwrap().to_str().unwrap())
+}
