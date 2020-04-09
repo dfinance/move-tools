@@ -5,18 +5,23 @@ use lsp_types::{Diagnostic, DiagnosticRelatedInformation, Location, Range, Url};
 use move_ir_types::location::Loc;
 use move_lang::errors::{Error, FilesSourceText};
 
+use crate::compiler::utils::get_canonical_fname;
+
 fn loc_into_range(
     files: &Files<String>,
     fname_to_file_id: &HashMap<&'static str, FileId>,
     location: Loc,
 ) -> Range {
-    let file_id = fname_to_file_id.get(location.file()).unwrap_or_else(|| {
-        panic!(
-            "Key {:?} not found in fname_to_file_id mapping. Keys are {:?}",
-            location.file(),
-            fname_to_file_id.keys()
-        )
-    });
+    let canonical_loc_fname = get_canonical_fname(location.file());
+    let file_id = fname_to_file_id
+        .get(canonical_loc_fname)
+        .unwrap_or_else(|| {
+            panic!(
+                "Key {:?} not found in fname_to_file_id mapping. Keys are {:?}",
+                canonical_loc_fname,
+                fname_to_file_id.keys()
+            )
+        });
     codespan_lsp::byte_span_to_range(files, *file_id, location.span())
         .expect("Cannot convert codespan::Span from libra compiler into lsp::Range type")
 }
@@ -25,8 +30,9 @@ pub fn libra_error_into_diagnostic(files: &FilesSourceText, error: Error) -> Dia
     let mut fname_to_file_id = HashMap::new();
     let mut files_db: Files<String> = Files::new();
     for (&fname, text) in files {
-        let file_id = files_db.add(fname, text.to_owned());
-        fname_to_file_id.insert(fname, file_id);
+        let canonical_fname = get_canonical_fname(fname);
+        let file_id = files_db.add(canonical_fname, text.to_owned());
+        fname_to_file_id.insert(canonical_fname, file_id);
     }
 
     let (primary_loc, primary_message) = error.get(0).unwrap().to_owned();
