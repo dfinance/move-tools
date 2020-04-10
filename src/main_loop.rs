@@ -16,11 +16,12 @@ use serde::Serialize;
 use crate::config::Config;
 use crate::handlers;
 use crate::world::WorldState;
+use ra_vfs::VfsTask;
 
 #[derive(Debug)]
 pub enum Event {
     Message(Message),
-    // Vfs(VfsTask),
+    Vfs(VfsTask),
 }
 
 pub fn main_loop(ws_root: PathBuf, config: Config, connection: &Connection) -> Result<()> {
@@ -36,12 +37,11 @@ pub fn main_loop(ws_root: PathBuf, config: Config, connection: &Connection) -> R
                 Ok(message) => Event::Message(message),
                 Err(_) => bail!("client exited without shutdown"),
             },
-            // recv(&world_state.vfs_task_receiver) -> task => match task {
-            //     Ok(task) => Event::Vfs(task),
-            //     Err(_) => bail!("vfs died"),
-            // }
+            recv(&world_state.fs_events_receiver) -> task => match task {
+                Ok(task) => Event::Vfs(task),
+                Err(_) => bail!("vfs died"),
+            }
         };
-        dbg!(&event);
         if let Event::Message(Message::Request(req)) = &event {
             if connection.handle_shutdown(&req)? {
                 break;
@@ -79,7 +79,7 @@ pub fn loop_turn(
     event: Event,
 ) -> Result<()> {
     match event {
-        // Event::Vfs(vfs_task) => world_state.vfs.handle_task(vfs_task),
+        Event::Vfs(vfs_task) => world_state.vfs.handle_task(vfs_task),
         Event::Message(message) => match message {
             Message::Request(req) => {
                 log::info!("Got request: {:?}", req);

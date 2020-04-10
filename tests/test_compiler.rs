@@ -2,10 +2,11 @@ use lsp_types::{Diagnostic, Position, Range};
 use move_lang::shared::Address;
 
 use move_language_server::config::Config;
-use move_language_server::ide::analysis::AnalysisHost;
+
 use move_language_server::ide::db::{AnalysisChange, FilePath};
 use move_language_server::test_utils::{get_modules_path, get_stdlib_path};
-use move_language_server::utils::io::{get_module_files, leaked_fpath};
+use move_language_server::utils::io::leaked_fpath;
+use move_language_server::world::WorldState;
 
 // just need some valid fname
 fn existing_file_abspath() -> FilePath {
@@ -36,17 +37,12 @@ fn diagnostics_with_config_and_filename(
     config: Config,
     fpath: FilePath,
 ) -> Vec<Diagnostic> {
-    let mut analysis_host = AnalysisHost::default();
+    let ws_root = std::env::current_dir().unwrap();
+    let world_state = WorldState::new(ws_root, config);
+    let mut analysis_host = world_state.analysis_host;
 
     let mut change = AnalysisChange::new();
-    for module_folder in config.module_folders {
-        for (fname, text) in get_module_files(&module_folder) {
-            change.update_file(fname, text);
-        }
-    }
-    // add current file
     change.update_file(fpath, text.to_string());
-    change.change_sender_address(config.sender_address);
     analysis_host.apply_change(change);
 
     analysis_host
