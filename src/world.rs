@@ -1,62 +1,31 @@
-use std::fs;
 use std::path::PathBuf;
 
-use crate::analysis::{Analysis, AnalysisChange};
-use crate::compiler::utils::get_module_files;
 use crate::config::Config;
+use crate::ide::analysis::AnalysisHost;
 
-fn analysis_change_from_config(config: &Config) -> AnalysisChange {
-    let mut change = AnalysisChange::new();
-    change.change_sender_address(config.sender_address);
-
-    for module_folder in config.module_folders.iter() {
-        let module_folder = match fs::canonicalize(module_folder) {
-            Ok(path) => path,
-            Err(_) => {
-                log::error!("Cannot resolve path {:?}", module_folder);
-                continue;
-            }
-        };
-        log::info!("Loading standard library from {:?}", &module_folder);
-        for (fname, new_text) in get_module_files(&module_folder) {
-            change.change_file(fname, new_text);
-        }
-    }
-    change
-}
-
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct WorldState {
     pub ws_root: PathBuf,
     pub config: Config,
-    analysis: Analysis,
+    pub analysis_host: AnalysisHost,
 }
 
 impl WorldState {
-    pub fn new(ws_root: PathBuf, config: Config) -> Self {
-        let change = analysis_change_from_config(&config);
-        let mut analysis = Analysis::default();
-        analysis.apply_change(change);
+    pub fn new(ws_root: PathBuf, config: Config) -> WorldState {
+        let analysis_host = AnalysisHost::default();
+
+        // TODO: initialize filesystem watcher
+        // TODO: load all files from ws_root and modules_roots
+        // TODO: apply_change()
+
         WorldState {
             ws_root,
             config,
-            analysis,
+            analysis_host,
         }
     }
 
-    pub fn update_configuration(&mut self, config: Config) {
-        let change = analysis_change_from_config(&config);
-        let mut new_analysis = Analysis::default();
-        new_analysis.apply_change(change);
-        self.analysis = new_analysis;
-        self.config = config;
-    }
-
-    pub fn analysis(&self) -> Analysis {
-        self.analysis.clone()
-    }
-
-    pub fn apply_change(&mut self, change: AnalysisChange) {
-        self.analysis.apply_change(change)
+    pub fn from_old_world_state(world_state: &WorldState, config: Config) -> WorldState {
+        WorldState::new(world_state.ws_root.clone(), config)
     }
 }
