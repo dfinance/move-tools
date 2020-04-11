@@ -22,11 +22,9 @@ impl RootDatabase {
         for root_change in change.root_changes {
             match root_change {
                 RootChange::AddFile(fpath, text) => {
-                    assert!(
-                        !self.project_files_mapping.contains_key(fpath),
-                        "AddFile: file {:?} already present",
-                        fpath
-                    );
+                    if self.project_files_mapping.contains_key(fpath) {
+                        log::warn!("AddFile: file {:?} already present", fpath);
+                    }
                     self.project_files_mapping.insert(fpath, text);
                     log::info!("AddFile: {:?}", fpath);
                 }
@@ -35,11 +33,9 @@ impl RootDatabase {
                     log::info!("ChangeFile: {:?}", fpath);
                 }
                 RootChange::RemoveFile(fpath) => {
-                    assert!(
-                        self.project_files_mapping.contains_key(fpath),
-                        "RemoveFile: file {:?} does not exist",
-                        fpath
-                    );
+                    if !self.project_files_mapping.contains_key(fpath) {
+                        log::warn!("RemoveFile: file {:?} does not exist", fpath);
+                    }
                     self.project_files_mapping.remove(fpath);
                     log::info!("RemoveFile: {:?}", fpath);
                 }
