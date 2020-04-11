@@ -16,6 +16,10 @@ impl AnalysisHost {
         }
     }
 
+    pub fn db(&self) -> &RootDatabase {
+        &self.db
+    }
+
     pub fn apply_change(&mut self, change: AnalysisChange) {
         self.db.apply_change(change);
     }

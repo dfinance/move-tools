@@ -314,47 +314,44 @@ fn test_set_to_default_in_case_of_invalid_address() {
     assert_eq!(world_state.config.sender_address, Address::default());
 }
 
-// #[test]
-// fn test_world_state_gets_updated_on_module_change() {
-//     let (server_conn, _client_conn) = setup_test_connections();
-//
-//     let mut config = Config::default();
-//     config.module_folders = vec![get_modules_path()];
-//
-//     let mut loop_state = LoopState::default();
-//     let mut world_state = WorldState::new(std::env::current_dir().unwrap(), config);
-//     let document_url = Url::from_file_path(
-//         get_modules_path()
-//             .join("covid_tracker.move")
-//             .canonicalize()
-//             .unwrap(),
-//     )
-//     .unwrap();
-//     let didchange_notification =
-//         notification_new::<DidChangeTextDocument>(DidChangeTextDocumentParams {
-//             text_document: VersionedTextDocumentIdentifier::new(document_url.clone(), 1),
-//             content_changes: vec![TextDocumentContentChangeEvent {
-//                 range: None,
-//                 range_length: None,
-//                 text: "module CovidTracker {}".to_string(),
-//             }],
-//         });
-//     loop_turn(
-//         &server_conn,
-//         &mut world_state,
-//         &mut loop_state,
-//         Event::Message(didchange_notification.into()),
-//     )
-//     .unwrap();
-//
-//     assert_eq!(
-//         world_state
-//             .analysis_host
-//             .analysis()
-//             .module_files()
-//             .file_mapping()
-//             .get(document_url.path())
-//             .unwrap(),
-//         "module CovidTracker {}"
-//     );
-// }
+#[test]
+fn test_world_state_gets_updated_on_module_change() {
+    let (server_conn, _client_conn) = setup_test_connections();
+
+    let mut config = Config::default();
+    config.module_folders = vec![get_modules_path()];
+
+    let mut loop_state = LoopState::default();
+    let mut world_state = WorldState::new(std::env::current_dir().unwrap(), config);
+    let document_url = Url::from_file_path(
+        get_modules_path()
+            .join("covid_tracker.move")
+            .canonicalize()
+            .unwrap(),
+    )
+    .unwrap();
+    let didchange_notification =
+        notification_new::<DidChangeTextDocument>(DidChangeTextDocumentParams {
+            text_document: VersionedTextDocumentIdentifier::new(document_url.clone(), 1),
+            content_changes: vec![TextDocumentContentChangeEvent {
+                range: None,
+                range_length: None,
+                text: "module CovidTracker {}".to_string(),
+            }],
+        });
+    loop_turn(
+        &server_conn,
+        &mut world_state,
+        &mut loop_state,
+        Event::Message(didchange_notification.into()),
+    )
+    .unwrap();
+
+    let covid_module_text = world_state
+        .analysis_host
+        .db()
+        .project_files_mapping
+        .get(document_url.path())
+        .unwrap();
+    assert_eq!(covid_module_text, "module CovidTracker {}");
+}
