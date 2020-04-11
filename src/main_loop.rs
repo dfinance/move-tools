@@ -48,7 +48,6 @@ pub fn main_loop(ws_root: PathBuf, config: Config, connection: &Connection) -> R
             }
         }
         loop_turn(&connection, &mut world_state, &mut loop_state, event)?;
-        world_state.apply_fs_changes();
     }
     Ok(())
 }
@@ -116,6 +115,7 @@ pub fn loop_turn(
             }
         },
     }
+    world_state.apply_fs_changes();
     Ok(())
 }
 

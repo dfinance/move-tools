@@ -84,8 +84,9 @@ impl WorldState {
                     let path = leaked_fpath(self.vfs.file2path(file).to_str().unwrap());
                     change.update_file(path, text.to_string());
                 }
-                VfsChange::RemoveFile { file, .. } => {
-                    let fpath = leaked_fpath(self.vfs.file2path(file).to_str().unwrap());
+                VfsChange::RemoveFile { file, path, .. } => {
+                    let fpath = path.to_path(self.vfs.file2path(file));
+                    let fpath = leaked_fpath(fpath.to_str().unwrap());
                     change.remove_file(fpath);
                 }
                 VfsChange::AddRoot { files, .. } => {

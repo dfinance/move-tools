@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-fn get_tests_dir() -> PathBuf {
+pub fn get_tests_dir() -> PathBuf {
     std::env::current_dir().unwrap().join("tests")
 }
 

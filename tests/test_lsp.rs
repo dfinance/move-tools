@@ -19,6 +19,7 @@ use move_language_server::main_loop::{
 };
 use move_language_server::server::{from_json, initialize_server, parse_initialize_params};
 use move_language_server::test_utils::{get_modules_path, get_stdlib_path, setup_test_logging};
+
 use move_language_server::world::WorldState;
 
 fn setup_test_connections() -> (Connection, Connection) {
@@ -355,3 +356,95 @@ fn test_world_state_gets_updated_on_module_change() {
         .unwrap();
     assert_eq!(covid_module_text, "module CovidTracker {}");
 }
+
+// #[test]
+// fn test_db_gets_updated_on_modules_on_disk_changes() {
+//     setup_test_logging();
+//     let sleep_watch_duration = Duration::from_millis(600);
+//
+//     let test_dir = get_tests_dir().join("_test_modules");
+//     if test_dir.exists() {
+//         std::fs::remove_dir_all(&test_dir).unwrap();
+//     }
+//     std::fs::create_dir(&test_dir).unwrap();
+//     for (fpath, text) in get_module_files(&get_modules_path()) {
+//         let path = PathBuf::from(fpath);
+//         let new_fpath = test_dir.join(path.file_name().unwrap());
+//         std::fs::write(new_fpath, text).unwrap();
+//     }
+//
+//     let covid_tracker_path = leaked_fpath(test_dir.join("covid_tracker.move").to_str().unwrap());
+//
+//     let (server_conn, _) = setup_test_connections();
+//     let ws_root = std::env::current_dir().unwrap();
+//     let mut config = Config::default();
+//     config.module_folders = vec![test_dir.clone()];
+//
+//     let mut loop_state = LoopState::default();
+//     let mut world_state = WorldState::new(ws_root, config);
+//
+//     // a bit more than watcher delay to allow watcher to parse directory
+//     std::thread::sleep(sleep_watch_duration);
+//     let task = world_state.fs_events_receiver.try_recv().unwrap();
+//     loop_turn(
+//         &server_conn,
+//         &mut world_state,
+//         &mut loop_state,
+//         Event::Vfs(task),
+//     )
+//     .unwrap();
+//     assert_eq!(
+//         world_state
+//             .analysis_host
+//             .db()
+//             .project_files_mapping
+//             .keys()
+//             .len(),
+//         1
+//     );
+//     assert!(world_state
+//         .analysis_host
+//         .db()
+//         .project_files_mapping
+//         .contains_key(covid_tracker_path));
+//
+//     // change module file contents
+//     std::fs::write(covid_tracker_path, "hello, world").unwrap();
+//     std::thread::sleep(sleep_watch_duration);
+//
+//     let task = world_state.fs_events_receiver.try_recv().unwrap();
+//     loop_turn(
+//         &server_conn,
+//         &mut world_state,
+//         &mut loop_state,
+//         Event::Vfs(task),
+//     )
+//     .unwrap();
+//     assert_eq!(
+//         world_state
+//             .analysis_host
+//             .db()
+//             .project_files_mapping
+//             .get(&covid_tracker_path)
+//             .unwrap(),
+//         "hello, world"
+//     );
+//
+//     std::fs::remove_file(&covid_tracker_path).unwrap();
+//     std::thread::sleep(sleep_watch_duration);
+//     let task = world_state.fs_events_receiver.try_recv().unwrap();
+//     loop_turn(
+//         &server_conn,
+//         &mut world_state,
+//         &mut loop_state,
+//         Event::Vfs(task),
+//     )
+//     .unwrap();
+//     assert!(world_state
+//         .analysis_host
+//         .db()
+//         .project_files_mapping
+//         .is_empty());
+//
+//     std::fs::remove_dir(test_dir).unwrap();
+// }
