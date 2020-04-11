@@ -18,17 +18,8 @@ use move_language_server::main_loop::{
     loop_turn, main_loop, notification_cast, notification_new, request_new, Event, LoopState,
 };
 use move_language_server::server::{from_json, initialize_server, parse_initialize_params};
-use move_language_server::test_utils::{get_modules_path, get_stdlib_path};
+use move_language_server::test_utils::{get_modules_path, get_stdlib_path, setup_test_logging};
 use move_language_server::world::WorldState;
-
-fn setup_test_logging() {
-    std::env::set_var("RUST_LOG", "info");
-    // silently returns Err if called more than once
-    env_logger::builder()
-        .is_test(true)
-        .try_init()
-        .unwrap_or_default();
-}
 
 fn setup_test_connections() -> (Connection, Connection) {
     setup_test_logging();

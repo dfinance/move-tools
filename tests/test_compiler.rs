@@ -2,10 +2,10 @@ use lsp_types::{Diagnostic, Position, Range};
 use move_lang::shared::Address;
 
 use move_language_server::config::Config;
-
 use move_language_server::ide::db::{AnalysisChange, FilePath};
+
 use move_language_server::test_utils::{get_modules_path, get_stdlib_path};
-use move_language_server::utils::io::leaked_fpath;
+use move_language_server::utils::io::{get_module_files, leaked_fpath};
 use move_language_server::world::WorldState;
 
 // just need some valid fname
@@ -42,6 +42,11 @@ fn diagnostics_with_config_and_filename(
     let mut analysis_host = world_state.analysis_host;
 
     let mut change = AnalysisChange::new();
+    for folder in world_state.config.module_folders {
+        for (fpath, text) in get_module_files(&folder) {
+            change.add_file(fpath, text);
+        }
+    }
     change.update_file(fpath, text.to_string());
     analysis_host.apply_change(change);
 

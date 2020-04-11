@@ -10,13 +10,13 @@ use lsp_types::notification::{
 };
 use lsp_types::request::WorkspaceConfiguration;
 use lsp_types::{ConfigurationItem, ConfigurationParams, MessageType, ShowMessageParams};
+use ra_vfs::VfsTask;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use crate::config::Config;
 use crate::handlers;
 use crate::world::WorldState;
-use ra_vfs::VfsTask;
 
 #[derive(Debug)]
 pub enum Event {
@@ -47,7 +47,8 @@ pub fn main_loop(ws_root: PathBuf, config: Config, connection: &Connection) -> R
                 break;
             }
         }
-        loop_turn(&connection, &mut world_state, &mut loop_state, event)?
+        loop_turn(&connection, &mut world_state, &mut loop_state, event)?;
+        world_state.apply_fs_changes();
     }
     Ok(())
 }
@@ -104,8 +105,7 @@ pub fn loop_turn(
                             if let Some(new_config) = configs.get(0) {
                                 let mut config = Config::default();
                                 config.update(new_config);
-                                *world_state =
-                                    WorldState::from_old_world_state(world_state, config);
+                                *world_state = WorldState::new(world_state.ws_root.clone(), config);
                             }
                         }
                         (None, None) => {

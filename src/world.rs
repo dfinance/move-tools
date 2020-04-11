@@ -1,12 +1,12 @@
 use std::path::PathBuf;
 
 use crossbeam_channel::{unbounded, Receiver};
-use ra_vfs::{Filter, RelativePath, RootEntry, Vfs, VfsTask, Watch};
+use ra_vfs::{Filter, RelativePath, RootEntry, Vfs, VfsChange, VfsTask, Watch};
 
 use crate::config::Config;
 use crate::ide::analysis::AnalysisHost;
 use crate::ide::db::AnalysisChange;
-use crate::utils::io::get_module_files;
+use crate::utils::io::leaked_fpath;
 
 struct MoveFilesFilter {
     module_folders: Vec<PathBuf>,
@@ -19,13 +19,18 @@ impl MoveFilesFilter {
 }
 
 impl Filter for MoveFilesFilter {
-    fn include_dir(&self, dir_path: &RelativePath) -> bool {
-        let path = dir_path.to_path(std::env::current_dir().unwrap());
-        self.module_folders.contains(&path)
+    fn include_dir(&self, _: &RelativePath) -> bool {
+        true
     }
 
     fn include_file(&self, file_path: &RelativePath) -> bool {
-        file_path.extension() == Some("move")
+        let is_move_file = file_path.extension() == Some("move");
+        is_move_file && {
+            let file_path = file_path.to_path(std::env::current_dir().unwrap());
+            self.module_folders
+                .iter()
+                .any(|folder| file_path.starts_with(folder))
+        }
     }
 }
 
@@ -43,11 +48,6 @@ impl WorldState {
         let mut analysis_host = AnalysisHost::default();
 
         let mut change = AnalysisChange::new();
-        for module_folder in &config.module_folders {
-            for (fname, text) in get_module_files(module_folder) {
-                change.update_file(fname, text);
-            }
-        }
         change.change_sender_address(config.sender_address);
         analysis_host.apply_change(change);
 
@@ -72,7 +72,30 @@ impl WorldState {
         }
     }
 
-    pub fn from_old_world_state(world_state: &WorldState, config: Config) -> WorldState {
-        WorldState::new(world_state.ws_root.clone(), config)
+    pub fn apply_fs_changes(&mut self) {
+        let mut change = AnalysisChange::new();
+        for fs_change in self.vfs.commit_changes() {
+            match fs_change {
+                VfsChange::AddFile { file, text, .. } => {
+                    let fpath = leaked_fpath(self.vfs.file2path(file).to_str().unwrap());
+                    change.add_file(fpath, text.to_string());
+                }
+                VfsChange::ChangeFile { file, text } => {
+                    let path = leaked_fpath(self.vfs.file2path(file).to_str().unwrap());
+                    change.update_file(path, text.to_string());
+                }
+                VfsChange::RemoveFile { file, .. } => {
+                    let fpath = leaked_fpath(self.vfs.file2path(file).to_str().unwrap());
+                    change.remove_file(fpath);
+                }
+                VfsChange::AddRoot { files, .. } => {
+                    for (file, _, text) in files {
+                        let fpath = leaked_fpath(self.vfs.file2path(file).to_str().unwrap());
+                        change.add_file(fpath, text.to_string());
+                    }
+                }
+            }
+        }
+        self.analysis_host.apply_change(change);
     }
 }

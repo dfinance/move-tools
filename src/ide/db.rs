@@ -18,8 +18,32 @@ impl RootDatabase {
         if let Some(address) = change.address_changed {
             self.sender_address = address;
         }
-        for (fpath, text) in change.files_updated {
-            self.project_files_mapping.insert(fpath, text);
+
+        for root_change in change.root_changes {
+            match root_change {
+                RootChange::AddFile(fpath, text) => {
+                    assert!(
+                        !self.project_files_mapping.contains_key(fpath),
+                        "AddFile: file {:?} already present",
+                        fpath
+                    );
+                    self.project_files_mapping.insert(fpath, text);
+                    log::info!("AddFile: {:?}", fpath);
+                }
+                RootChange::ChangeFile(fpath, text) => {
+                    self.project_files_mapping.insert(fpath, text);
+                    log::info!("ChangeFile: {:?}", fpath);
+                }
+                RootChange::RemoveFile(fpath) => {
+                    assert!(
+                        self.project_files_mapping.contains_key(fpath),
+                        "RemoveFile: file {:?} does not exist",
+                        fpath
+                    );
+                    self.project_files_mapping.remove(fpath);
+                    log::info!("RemoveFile: {:?}", fpath);
+                }
+            }
         }
     }
 
@@ -63,10 +87,17 @@ impl RootDatabase {
     }
 }
 
+#[derive(Debug)]
+pub enum RootChange {
+    AddFile(FilePath, String),
+    ChangeFile(FilePath, String),
+    RemoveFile(FilePath),
+}
+
 #[derive(Default, Debug)]
 pub struct AnalysisChange {
     address_changed: Option<Address>,
-    files_updated: Vec<(FilePath, String)>,
+    root_changes: Vec<RootChange>,
 }
 
 impl AnalysisChange {
@@ -74,8 +105,16 @@ impl AnalysisChange {
         AnalysisChange::default()
     }
 
+    pub fn add_file(&mut self, fname: FilePath, text: String) {
+        self.root_changes.push(RootChange::AddFile(fname, text));
+    }
+
     pub fn update_file(&mut self, fname: FilePath, text: String) {
-        self.files_updated.push((fname, text));
+        self.root_changes.push(RootChange::ChangeFile(fname, text));
+    }
+
+    pub fn remove_file(&mut self, fname: FilePath) {
+        self.root_changes.push(RootChange::RemoveFile(fname))
     }
 
     pub fn change_sender_address(&mut self, new_address: Address) {
