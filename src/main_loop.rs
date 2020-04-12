@@ -82,14 +82,14 @@ pub fn loop_turn(
         Event::Vfs(vfs_task) => world_state.vfs.handle_task(vfs_task),
         Event::Message(message) => match message {
             Message::Request(req) => {
-                log::info!("Got request: {:?}", req);
+                log::info!("Got request: {:#?}", req);
             }
             Message::Notification(not) => {
-                log::info!("Got notification: {:?}", not);
+                log::info!("Got notification: {:#?}", not);
                 on_notification(&connection.sender, world_state, loop_state, not)?;
             }
             Message::Response(resp) => {
-                log::info!("Got response: {:?}", resp);
+                log::info!("Got response: {:#?}", resp);
 
                 if Some(&resp.id) == loop_state.configuration_request_id.as_ref() {
                     loop_state.configuration_request_id = None;
