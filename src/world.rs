@@ -8,15 +8,8 @@ use crate::ide::analysis::AnalysisHost;
 use crate::ide::db::AnalysisChange;
 use crate::utils::io::leaked_fpath;
 
-struct MoveFilesFilter {
-    module_folders: Vec<PathBuf>,
-}
-
-impl MoveFilesFilter {
-    pub fn new(module_folders: Vec<PathBuf>) -> MoveFilesFilter {
-        MoveFilesFilter { module_folders }
-    }
-}
+#[derive(Default)]
+struct MoveFilesFilter;
 
 impl Filter for MoveFilesFilter {
     fn include_dir(&self, _: &RelativePath) -> bool {
@@ -24,14 +17,7 @@ impl Filter for MoveFilesFilter {
     }
 
     fn include_file(&self, file_path: &RelativePath) -> bool {
-        let is_move_file = file_path.extension() == Some("move");
-        is_move_file
-        // is_move_file && {
-        //     let file_path = file_path.to_path(std::env::current_dir().unwrap());
-        //     self.module_folders
-        //         .iter()
-        //         .any(|folder| file_path.starts_with(folder))
-        // }
+        file_path.extension() == Some("move")
     }
 }
 
@@ -53,10 +39,7 @@ impl WorldState {
         analysis_host.apply_change(change);
 
         let (fs_events_sender, fs_events_receiver) = unbounded::<VfsTask>();
-        let modules_root = RootEntry::new(
-            ws_root.clone(),
-            Box::new(MoveFilesFilter::new(config.module_folders.clone())),
-        );
+        let modules_root = RootEntry::new(ws_root.clone(), Box::new(MoveFilesFilter::default()));
         let vfs = Vfs::new(
             vec![modules_root],
             Box::new(move |task| fs_events_sender.send(task).unwrap()),

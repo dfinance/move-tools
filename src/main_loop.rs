@@ -1,6 +1,5 @@
 use std::fmt;
 use std::path::PathBuf;
-use std::thread::Thread;
 
 use anyhow::bail;
 use anyhow::Result;
@@ -21,7 +20,7 @@ use serde::Serialize;
 use threadpool::ThreadPool;
 
 use crate::config::Config;
-use crate::handlers;
+
 use crate::ide::analysis::Analysis;
 use crate::ide::db::FilePath;
 use crate::subscriptions::OpenedFiles;

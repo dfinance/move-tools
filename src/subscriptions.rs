@@ -1,7 +1,7 @@
 //! Keeps track of file subscriptions -- the set of currently opened files for
 //! which we want to publish diagnostics, syntax highlighting, etc.
 
-use std::collections::{BTreeSet, HashSet};
+use std::collections::HashSet;
 
 use crate::ide::db::FilePath;
 

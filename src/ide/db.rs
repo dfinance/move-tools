@@ -16,13 +16,11 @@ pub struct RootDatabase {
 
 impl RootDatabase {
     pub fn module_files(&self) -> FilesSourceText {
-        let modules = self
-            .all_tracked_files
-            .iter()
+        self.all_tracked_files
+            .clone()
+            .into_iter()
             .filter(|(f, _)| self.is_fpath_for_a_module(f))
-            .map(|(f, t)| (f.clone(), t.clone()))
-            .collect();
-        modules
+            .collect()
     }
 
     pub fn sender_address(&self) -> Address {
