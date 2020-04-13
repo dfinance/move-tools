@@ -63,7 +63,7 @@ impl Analysis {
             }
         }
         let check_res =
-            check::check_parsed_program(main_file, dependencies, Some(self.db.sender_address));
+            check::check_parsed_program(main_file, dependencies, Some(self.db().sender_address()));
         check_res.map_err(|errors| {
             errors
                 .into_iter()

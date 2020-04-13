@@ -3,51 +3,44 @@ use move_ir_types::location::Loc;
 use move_lang::errors::{Error, FilesSourceText};
 use move_lang::shared::Address;
 
+use crate::config::Config;
 use crate::utils::location::File;
 
 pub type FilePath = &'static str;
 
 #[derive(Debug, Default, Clone)]
 pub struct RootDatabase {
-    pub sender_address: Address,
-    pub module_folders: Vec<FilePath>,
+    pub config: Config,
     pub all_tracked_files: FilesSourceText,
-    pub module_files: FilesSourceText,
 }
 
 impl RootDatabase {
     pub fn module_files(&self) -> FilesSourceText {
-        let modules = self.all_tracked_files
+        let modules = self
+            .all_tracked_files
             .iter()
             .filter(|(f, _)| self.is_fpath_for_a_module(f))
             .map(|(f, t)| (f.clone(), t.clone()))
             .collect();
-        dbg!(&self.module_folders);
         modules
     }
 
-    pub fn apply_change(&mut self, change: AnalysisChange) {
-        if let Some(address) = change.address_changed {
-            self.sender_address = address;
-        }
-        if let Some(folders) = change.module_folders_changed {
-            self.module_folders = folders;
-        }
+    pub fn sender_address(&self) -> Address {
+        self.config.sender_address
+    }
 
+    pub fn apply_change(&mut self, change: AnalysisChange) {
+        if let Some(config) = change.config_changed {
+            self.config = config;
+        }
         for root_change in change.tracked_files_changed {
             match root_change {
                 RootChange::AddFile(fpath, text) => {
                     log::info!("AddFile: {:?}", fpath);
-                    if self.is_fpath_for_a_module(fpath) {
-                        self.module_files.insert(fpath, text.clone());
-                    }
                     self.all_tracked_files.insert(fpath, text);
                 }
                 RootChange::ChangeFile(fpath, text) => {
                     log::info!("ChangeFile: {:?}", fpath);
-                    if self.is_fpath_for_a_module(fpath) {
-                        self.module_files.insert(fpath, text.clone());
-                    }
                     self.all_tracked_files.insert(fpath, text);
                 }
                 RootChange::RemoveFile(fpath) => {
@@ -55,9 +48,6 @@ impl RootDatabase {
                         log::warn!("RemoveFile: file {:?} does not exist", fpath);
                     }
                     log::info!("RemoveFile: {:?}", fpath);
-                    if self.is_fpath_for_a_module(fpath) {
-                        self.module_files.remove(fpath);
-                    }
                     self.all_tracked_files.remove(fpath);
                 }
             }
@@ -100,8 +90,8 @@ impl RootDatabase {
     }
 
     fn is_fpath_for_a_module(&self, fpath: FilePath) -> bool {
-        for module_folder in self.module_folders.iter() {
-            if fpath.starts_with(module_folder) {
+        for module_folder in self.config.module_folders.iter() {
+            if fpath.starts_with(module_folder.to_str().unwrap()) {
                 return true;
             }
         }
@@ -118,9 +108,8 @@ pub enum RootChange {
 
 #[derive(Default, Debug)]
 pub struct AnalysisChange {
-    address_changed: Option<Address>,
     tracked_files_changed: Vec<RootChange>,
-    module_folders_changed: Option<Vec<FilePath>>
+    config_changed: Option<Config>,
 }
 
 impl AnalysisChange {
@@ -143,11 +132,7 @@ impl AnalysisChange {
             .push(RootChange::RemoveFile(fname))
     }
 
-    pub fn change_sender_address(&mut self, new_address: Address) {
-        self.address_changed = Some(new_address);
-    }
-
-    pub fn change_module_folders(&mut self, folders: Vec<FilePath>) {
-        self.module_folders_changed = Some(folders);
+    pub fn change_config(&mut self, config: Config) {
+        self.config_changed = Some(config);
     }
 }

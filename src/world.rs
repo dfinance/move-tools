@@ -49,14 +49,7 @@ impl WorldState {
         let mut analysis_host = AnalysisHost::default();
 
         let mut change = AnalysisChange::new();
-        change.change_sender_address(config.sender_address);
-        change.change_module_folders(
-            config
-                .module_folders
-                .iter()
-                .map(|p| leaked_fpath(p.to_str().unwrap()))
-                .collect(),
-        );
+        change.change_config(config.clone());
         analysis_host.apply_change(change);
 
         let (fs_events_sender, fs_events_receiver) = unbounded::<VfsTask>();
