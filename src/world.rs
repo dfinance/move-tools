@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crossbeam_channel::{Receiver, unbounded};
+use crossbeam_channel::{unbounded, Receiver};
 use ra_vfs::{Filter, RelativePath, RootEntry, Vfs, VfsChange, VfsTask, Watch};
 
 use crate::config::Config;

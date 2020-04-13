@@ -4,17 +4,17 @@ use std::thread::Thread;
 
 use anyhow::bail;
 use anyhow::Result;
-use crossbeam_channel::{Sender, unbounded};
+use crossbeam_channel::{unbounded, Sender};
 use lsp_server::{Connection, Message, Notification, Request, RequestId, Response};
-use lsp_types::{
-    ConfigurationItem, ConfigurationParams, Diagnostic, MessageType, PublishDiagnosticsParams,
-    ShowMessageParams, Url,
-};
 use lsp_types::notification::{
     DidChangeConfiguration, DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument,
     PublishDiagnostics, ShowMessage,
 };
 use lsp_types::request::WorkspaceConfiguration;
+use lsp_types::{
+    ConfigurationItem, ConfigurationParams, Diagnostic, MessageType, PublishDiagnosticsParams,
+    ShowMessageParams, Url,
+};
 use ra_vfs::VfsTask;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
