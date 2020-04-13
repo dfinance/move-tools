@@ -280,7 +280,7 @@ fn test_update_server_configuration_from_the_client() {
         &server_conn,
         &mut world_state,
         &mut loop_state,
-        Event::Message(client_config_response.into()),
+        Event::Msg(client_config_response.into()),
     )
     .unwrap();
 
@@ -308,7 +308,7 @@ fn test_set_to_default_in_case_of_invalid_address() {
         &server_conn,
         &mut world_state,
         &mut loop_state,
-        Event::Message(client_config_response.into()),
+        Event::Msg(client_config_response.into()),
     )
     .unwrap();
 
@@ -344,7 +344,7 @@ fn test_world_state_gets_updated_on_module_change() {
         &server_conn,
         &mut world_state,
         &mut loop_state,
-        Event::Message(didchange_notification.into()),
+        Event::Msg(didchange_notification.into()),
     )
     .unwrap();
 

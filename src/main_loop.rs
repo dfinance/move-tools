@@ -1,33 +1,48 @@
 use std::fmt;
 use std::path::PathBuf;
+use std::thread::Thread;
 
 use anyhow::bail;
 use anyhow::Result;
-use crossbeam_channel::Sender;
-
+use crossbeam_channel::{Sender, unbounded};
 use lsp_server::{Connection, Message, Notification, Request, RequestId, Response};
+use lsp_types::{
+    ConfigurationItem, ConfigurationParams, Diagnostic, MessageType, PublishDiagnosticsParams,
+    ShowMessageParams, Url,
+};
 use lsp_types::notification::{
     DidChangeConfiguration, DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument,
-    ShowMessage,
+    PublishDiagnostics, ShowMessage,
 };
 use lsp_types::request::WorkspaceConfiguration;
-use lsp_types::{ConfigurationItem, ConfigurationParams, MessageType, ShowMessageParams};
 use ra_vfs::VfsTask;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use threadpool::ThreadPool;
 
 use crate::config::Config;
 use crate::handlers;
+use crate::ide::analysis::Analysis;
+use crate::ide::db::FilePath;
+use crate::subscriptions::OpenedFiles;
+use crate::utils::io::leaked_fpath;
 use crate::world::WorldState;
 
+#[derive(Debug)]
+pub enum Task {
+    Respond(Response),
+    Diagnostic(FilePath, Vec<Diagnostic>),
+}
+
 pub enum Event {
-    Message(Message),
+    Task(Task),
     Vfs(VfsTask),
+    Msg(Message),
 }
 
 impl fmt::Debug for Event {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Event::Message(Message::Notification(not)) = self {
+        if let Event::Msg(Message::Notification(not)) = self {
             if notification_is::<DidOpenTextDocument>(not)
                 || notification_is::<DidChangeTextDocument>(not)
             {
@@ -40,8 +55,9 @@ impl fmt::Debug for Event {
             }
         }
         match self {
-            Event::Message(it) => fmt::Debug::fmt(it, f),
+            Event::Msg(it) => fmt::Debug::fmt(it, f),
             Event::Vfs(it) => fmt::Debug::fmt(it, f),
+            Event::Task(it) => fmt::Debug::fmt(it, f),
         }
     }
 }
@@ -52,24 +68,35 @@ pub fn main_loop(ws_root: PathBuf, config: Config, connection: &Connection) -> R
     let mut loop_state = LoopState::default();
     let mut world_state = WorldState::new(ws_root, config);
 
+    let pool = ThreadPool::default();
+    let (task_sender, task_receiver) = unbounded::<Task>();
+
     log::info!("server initialized, serving requests");
     loop {
         let event = crossbeam_channel::select! {
             recv(&connection.receiver) -> message => match message {
-                Ok(message) => Event::Message(message),
+                Ok(message) => Event::Msg(message),
                 Err(_) => bail!("client exited without shutdown"),
             },
+            recv(&task_receiver) -> task => Event::Task(task.unwrap()),
             recv(&world_state.fs_events_receiver) -> task => match task {
                 Ok(task) => Event::Vfs(task),
                 Err(_) => bail!("vfs died"),
             }
         };
-        if let Event::Message(Message::Request(req)) = &event {
+        if let Event::Msg(Message::Request(req)) = &event {
             if connection.handle_shutdown(&req)? {
                 break;
             }
         }
-        loop_turn(&connection, &mut world_state, &mut loop_state, event)?;
+        loop_turn(
+            &pool,
+            &task_sender,
+            &connection,
+            &mut world_state,
+            &mut loop_state,
+            event,
+        )?;
     }
     Ok(())
 }
@@ -77,6 +104,7 @@ pub fn main_loop(ws_root: PathBuf, config: Config, connection: &Connection) -> R
 #[derive(Debug, Default)]
 pub struct LoopState {
     next_request_id: u64,
+    opened_files: OpenedFiles,
     configuration_request_id: Option<RequestId>,
 }
 
@@ -95,17 +123,20 @@ impl LoopState {
 }
 
 pub fn loop_turn(
+    pool: &ThreadPool,
+    task_sender: &Sender<Task>,
     connection: &Connection,
     world_state: &mut WorldState,
     loop_state: &mut LoopState,
     event: Event,
 ) -> Result<()> {
-    if matches!(event, Event::Message(_)) {
-        log::info!("Received => {:#?}", &event);
+    if matches!(event, Event::Msg(_)) {
+        log::info!("loop turn = {:#?}", &event);
     }
     match event {
+        Event::Task(task) => on_task(task, &connection.sender),
         Event::Vfs(vfs_task) => world_state.vfs.handle_task(vfs_task),
-        Event::Message(message) => match message {
+        Event::Msg(message) => match message {
             Message::Request(_) => {}
             Message::Notification(not) => {
                 on_notification(&connection.sender, world_state, loop_state, not)?;
@@ -136,8 +167,52 @@ pub fn loop_turn(
             }
         },
     }
-    world_state.apply_fs_changes();
+    let fs_state_changed = world_state.apply_fs_changes();
+    if fs_state_changed {
+        // run compiler check for diagnostics
+        update_file_notifications_on_threadpool(
+            pool,
+            world_state.analysis_host.analysis(),
+            task_sender.clone(),
+            loop_state.opened_files.files(),
+        );
+    }
     Ok(())
+}
+
+fn on_task(task: Task, msg_sender: &Sender<Message>) {
+    match task {
+        Task::Respond(_) => {}
+        Task::Diagnostic(fpath, ds) => {
+            let uri = Url::from_file_path(fpath).unwrap();
+            let params = PublishDiagnosticsParams::new(uri, ds, None);
+            let not = notification_new::<PublishDiagnostics>(params);
+            msg_sender.send(not.into()).unwrap();
+        }
+    }
+}
+
+fn update_file_notifications_on_threadpool(
+    pool: &ThreadPool,
+    analysis: Analysis,
+    task_sender: Sender<Task>,
+    opened_files: Vec<FilePath>,
+) {
+    pool.execute(move || {
+        for fpath in opened_files {
+            let text = analysis
+                .db()
+                .project_files_mapping
+                .get(fpath)
+                .expect(&format!(
+                    "{:?} is not present in keys {:?}",
+                    fpath,
+                    analysis.db().project_files_mapping.keys()
+                ));
+            let diagnostics = analysis.check_with_libra_compiler(fpath, text);
+            task_sender.send(Task::Diagnostic(fpath, diagnostics)).unwrap();
+        }
+    })
 }
 
 fn on_notification(
@@ -146,37 +221,63 @@ fn on_notification(
     loop_state: &mut LoopState,
     not: Notification,
 ) -> Result<()> {
-    let notif = match notification_cast::<DidOpenTextDocument>(not) {
+    let not = match notification_cast::<DidOpenTextDocument>(not) {
         Ok(params) => {
-            let source_text = params.text_document.text;
-            let not = handlers::on_did_change_document(
-                world_state,
-                params.text_document.uri,
-                &source_text,
-            );
-            log::info!("Sending {:?}", &not);
-            msg_sender.send(not.into()).unwrap();
+            let uri = params.text_document.uri;
+            let fpath = uri
+                .to_file_path()
+                .map_err(|_| anyhow::anyhow!("invalid uri: {}", uri))?;
+            world_state
+                .vfs
+                .add_file_overlay(fpath.as_path(), params.text_document.text);
+            loop_state
+                .opened_files
+                .add(leaked_fpath(fpath.to_str().unwrap()));
             return Ok(());
+            // let not = handlers::on_did_change_document(
+            //     world_state,
+            //     params.text_document.uri,
+            //     &source_text,
+            // );
+            // log::info!("Sending {:?}", &not);
+            // msg_sender.send(not.into()).unwrap();
+            // return Ok(());
         }
         Err(not) => not,
     };
-    let notif = match notification_cast::<DidChangeTextDocument>(notif) {
-        Ok(params) => {
-            let source_text = params.content_changes.get(0).unwrap().clone().text;
-            let not = handlers::on_did_change_document(
-                world_state,
-                params.text_document.uri,
-                &source_text,
-            );
-            log::info!("Sending {:?}", &not);
-            msg_sender.send(not.into())?;
-
+    let not = match notification_cast::<DidChangeTextDocument>(not) {
+        Ok(mut params) => {
+            let uri = params.text_document.uri;
+            let fpath = uri
+                .to_file_path()
+                .map_err(|_| anyhow::anyhow!("invalid uri: {}", uri))?;
+            let text = params
+                .content_changes
+                .pop()
+                .ok_or_else(|| anyhow::anyhow!("empty changes".to_string()))?
+                .text;
+            world_state.vfs.change_file_overlay(fpath.as_path(), text);
             return Ok(());
+            // let source_text = params.content_changes.get(0).unwrap().clone().text;
+            // let not = handlers::on_did_change_document(
+            //     world_state,
+            //     params.text_document.uri,
+            //     &source_text,
+            // );
+            // log::info!("Sending {:?}", &not);
+            // msg_sender.send(not.into())?;
         }
         Err(not) => not,
     };
-    let not = match notification_cast::<DidCloseTextDocument>(notif) {
-        Ok(_) => {
+    let not = match notification_cast::<DidCloseTextDocument>(not) {
+        Ok(params) => {
+            let uri = params.text_document.uri;
+            let fpath = uri
+                .to_file_path()
+                .map_err(|_| anyhow::anyhow!("invalid uri: {}", uri))?;
+            loop_state
+                .opened_files
+                .remove(leaked_fpath(fpath.to_str().unwrap()));
             return Ok(());
         }
         Err(not) => not,

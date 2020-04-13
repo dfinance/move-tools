@@ -72,9 +72,13 @@ impl WorldState {
         }
     }
 
-    pub fn apply_fs_changes(&mut self) {
+    pub fn apply_fs_changes(&mut self) -> bool {
+        let vfs_changes = self.vfs.commit_changes();
+        if vfs_changes.is_empty() {
+            return false;
+        }
         let mut change = AnalysisChange::new();
-        for fs_change in self.vfs.commit_changes() {
+        for fs_change in vfs_changes {
             match fs_change {
                 VfsChange::AddFile { file, text, .. } => {
                     let fpath = leaked_fpath(self.vfs.file2path(file).to_str().unwrap());
@@ -98,5 +102,6 @@ impl WorldState {
             }
         }
         self.analysis_host.apply_change(change);
+        true
     }
 }

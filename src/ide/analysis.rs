@@ -31,6 +31,10 @@ pub struct Analysis {
 }
 
 impl Analysis {
+    pub fn db(&self) -> &RootDatabase {
+        &self.db
+    }
+
     pub fn parse(&self, fpath: FilePath, text: &str) -> Result<FileDefinition, Vec<Diagnostic>> {
         parse_file(fpath, text).map_err(|err| vec![self.db.libra_error_into_diagnostic(err)])
     }
