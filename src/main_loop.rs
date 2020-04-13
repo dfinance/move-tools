@@ -142,7 +142,6 @@ pub fn loop_turn(
                 on_notification(&connection.sender, world_state, loop_state, not)?;
             }
             Message::Response(resp) => {
-                // log::info!("Got response: {:#?}", resp);
                 if Some(&resp.id) == loop_state.configuration_request_id.as_ref() {
                     loop_state.configuration_request_id = None;
                     log::info!("config update response: '{:?}", resp);
@@ -167,7 +166,7 @@ pub fn loop_turn(
             }
         },
     }
-    let fs_state_changed = world_state.apply_fs_changes();
+    let fs_state_changed = world_state.load_fs_changes();
     if fs_state_changed {
         // run compiler check for diagnostics
         update_file_notifications_on_threadpool(
@@ -200,17 +199,11 @@ fn update_file_notifications_on_threadpool(
 ) {
     pool.execute(move || {
         for fpath in opened_files {
-            let text = analysis
-                .db()
-                .project_files_mapping
-                .get(fpath)
-                .expect(&format!(
-                    "{:?} is not present in keys {:?}",
-                    fpath,
-                    analysis.db().project_files_mapping.keys()
-                ));
+            let text = analysis.db().all_tracked_files.get(fpath).unwrap();
             let diagnostics = analysis.check_with_libra_compiler(fpath, text);
-            task_sender.send(Task::Diagnostic(fpath, diagnostics)).unwrap();
+            task_sender
+                .send(Task::Diagnostic(fpath, diagnostics))
+                .unwrap();
         }
     })
 }
@@ -227,21 +220,18 @@ fn on_notification(
             let fpath = uri
                 .to_file_path()
                 .map_err(|_| anyhow::anyhow!("invalid uri: {}", uri))?;
-            world_state
+            let overlay = world_state
                 .vfs
                 .add_file_overlay(fpath.as_path(), params.text_document.text);
+            assert!(
+                overlay.is_some(),
+                "Cannot find file {:?} in current roots",
+                &fpath
+            );
             loop_state
                 .opened_files
                 .add(leaked_fpath(fpath.to_str().unwrap()));
             return Ok(());
-            // let not = handlers::on_did_change_document(
-            //     world_state,
-            //     params.text_document.uri,
-            //     &source_text,
-            // );
-            // log::info!("Sending {:?}", &not);
-            // msg_sender.send(not.into()).unwrap();
-            // return Ok(());
         }
         Err(not) => not,
     };
@@ -258,14 +248,6 @@ fn on_notification(
                 .text;
             world_state.vfs.change_file_overlay(fpath.as_path(), text);
             return Ok(());
-            // let source_text = params.content_changes.get(0).unwrap().clone().text;
-            // let not = handlers::on_did_change_document(
-            //     world_state,
-            //     params.text_document.uri,
-            //     &source_text,
-            // );
-            // log::info!("Sending {:?}", &not);
-            // msg_sender.send(not.into())?;
         }
         Err(not) => not,
     };

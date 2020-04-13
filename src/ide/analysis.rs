@@ -54,7 +54,7 @@ impl Analysis {
         let main_file = self.parse(fpath, text)?;
 
         let mut dependencies = vec![];
-        for (existing_mod_fpath, existing_mod_text) in self.db.project_files_mapping.iter() {
+        for (existing_mod_fpath, existing_mod_text) in self.db.module_files().iter() {
             if existing_mod_fpath != &fpath {
                 let parsed = self.parse(existing_mod_fpath, existing_mod_text)?;
                 if matches!(parsed, FileDefinition::Modules(_)) {

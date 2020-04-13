@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crossbeam_channel::{unbounded, Receiver};
+use crossbeam_channel::{Receiver, unbounded};
 use ra_vfs::{Filter, RelativePath, RootEntry, Vfs, VfsChange, VfsTask, Watch};
 
 use crate::config::Config;
@@ -25,12 +25,13 @@ impl Filter for MoveFilesFilter {
 
     fn include_file(&self, file_path: &RelativePath) -> bool {
         let is_move_file = file_path.extension() == Some("move");
-        is_move_file && {
-            let file_path = file_path.to_path(std::env::current_dir().unwrap());
-            self.module_folders
-                .iter()
-                .any(|folder| file_path.starts_with(folder))
-        }
+        is_move_file
+        // is_move_file && {
+        //     let file_path = file_path.to_path(std::env::current_dir().unwrap());
+        //     self.module_folders
+        //         .iter()
+        //         .any(|folder| file_path.starts_with(folder))
+        // }
     }
 }
 
@@ -49,6 +50,13 @@ impl WorldState {
 
         let mut change = AnalysisChange::new();
         change.change_sender_address(config.sender_address);
+        change.change_module_folders(
+            config
+                .module_folders
+                .iter()
+                .map(|p| leaked_fpath(p.to_str().unwrap()))
+                .collect(),
+        );
         analysis_host.apply_change(change);
 
         let (fs_events_sender, fs_events_receiver) = unbounded::<VfsTask>();
@@ -72,7 +80,7 @@ impl WorldState {
         }
     }
 
-    pub fn apply_fs_changes(&mut self) -> bool {
+    pub fn load_fs_changes(&mut self) -> bool {
         let vfs_changes = self.vfs.commit_changes();
         if vfs_changes.is_empty() {
             return false;

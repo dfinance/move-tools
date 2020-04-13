@@ -351,7 +351,7 @@ fn test_world_state_gets_updated_on_module_change() {
     let covid_module_text = world_state
         .analysis_host
         .db()
-        .project_files_mapping
+        .all_tracked_files
         .get(document_url.path())
         .unwrap();
     assert_eq!(covid_module_text, "module CovidTracker {}");
