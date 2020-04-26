@@ -1,8 +1,8 @@
 use rowan::{GreenNodeBuilder, TextRange, TextSize};
 
-use crate::ide_parser::lexer;
-use crate::ide_parser::lexer::Token;
-use crate::ide_parser::syntax_kind::SyntaxKind;
+use crate::parser::lexer;
+use crate::parser::lexer::Token;
+use crate::parser::syntax_kind::SyntaxKind;
 
 pub fn syntax_kind_at(pos: usize, tokens: &[Token]) -> SyntaxKind {
     tokens.get(pos).map(|t| t.kind).unwrap_or(SyntaxKind::EOF)

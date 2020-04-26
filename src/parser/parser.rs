@@ -2,10 +2,10 @@ use rowan::{GreenNode, GreenNodeBuilder};
 use serde::export::fmt::Debug;
 use serde::export::Formatter;
 
-use crate::ide_parser::lexer;
-use crate::ide_parser::syntax_kind::SyntaxKind;
-use crate::ide_parser::token_source::TextTokenSource;
-use crate::ide_parser::tree::SyntaxNode;
+use crate::parser::lexer;
+use crate::parser::syntax_kind::SyntaxKind;
+use crate::parser::token_source::TextTokenSource;
+use crate::parser::tree::SyntaxNode;
 
 pub struct Parse {
     pub green: GreenNode,

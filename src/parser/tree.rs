@@ -1,4 +1,4 @@
-use crate::ide_parser::syntax_kind::SyntaxKind;
+use crate::parser::syntax_kind::SyntaxKind;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MoveLanguage;

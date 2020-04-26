@@ -1,8 +1,8 @@
 use std::str::Chars;
 
 use crate::completion::get_keywords;
-use crate::ide_parser::cursor::Cursor;
-use crate::ide_parser::syntax_kind::SyntaxKind;
+use crate::parser::cursor::Cursor;
+use crate::parser::syntax_kind::SyntaxKind;
 use rowan::TextSize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
