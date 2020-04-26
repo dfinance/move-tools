@@ -8,7 +8,7 @@ pub fn syntax_kind_at(pos: usize, tokens: &[Token]) -> SyntaxKind {
     tokens.get(pos).map(|t| t.kind).unwrap_or(SyntaxKind::EOF)
 }
 
-pub struct TextTokenSource<'i> {
+pub struct Tokens<'i> {
     text: &'i str,
     start_offsets: Vec<TextSize>,
     tokens: Vec<Token>,
@@ -16,8 +16,8 @@ pub struct TextTokenSource<'i> {
     curr: (SyntaxKind, usize),
 }
 
-impl<'t> TextTokenSource<'t> {
-    pub fn new(text: &'t str, raw_tokens: &'t [Token]) -> TextTokenSource<'t> {
+impl<'t> Tokens<'t> {
+    pub fn new(text: &'t str, raw_tokens: &'t [Token]) -> Tokens<'t> {
         let mut tokens = vec![];
         let mut start_offsets = vec![];
         let mut last_token_offset = TextSize::zero();
@@ -29,7 +29,7 @@ impl<'t> TextTokenSource<'t> {
             last_token_offset += token.len;
         }
         let first_kind = syntax_kind_at(0, &tokens);
-        TextTokenSource {
+        Tokens {
             text,
             start_offsets,
             tokens,

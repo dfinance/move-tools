@@ -4,7 +4,7 @@ use serde::export::Formatter;
 
 use crate::parser::lexer;
 use crate::parser::syntax_kind::SyntaxKind;
-use crate::parser::token_source::TextTokenSource;
+use crate::parser::tokens::Tokens;
 use crate::parser::tree::SyntaxNode;
 
 pub struct Parse {
@@ -18,35 +18,35 @@ impl Parse {
     }
 }
 
+pub fn parse(text: &str) -> Parse {
+    let raw_tokens: Vec<_> = lexer::tokenize(text).collect();
+    let token_source = Tokens::new(text, &raw_tokens);
+    Parser::new(token_source).parse()
+}
+
 pub struct Parser<'i> {
-    token_source: TextTokenSource<'i>,
+    tokens: Tokens<'i>,
     builder: GreenNodeBuilder<'i>,
 }
 
 impl<'i> Parser<'i> {
-    fn new(token_source: TextTokenSource) -> Parser {
+    fn new(tokens: Tokens) -> Parser {
         Parser {
-            token_source,
+            tokens,
             builder: GreenNodeBuilder::new(),
         }
     }
 
     fn parse_token(&mut self, token_kind: SyntaxKind) -> Result<(), String> {
-        if self.token_source.current() == token_kind {
+        if self.tokens.current() == token_kind {
             self.builder
-                .token(token_kind.into(), self.token_source.current_text().into());
-            self.token_source.bump();
+                .token(token_kind.into(), self.tokens.current_text().into());
+            self.tokens.bump();
             Ok(())
         } else {
             Err(format!("Invalid token {:?}", token_kind))
         }
     }
-
-    fn parse_name(&mut self) {
-        self.parse_token(SyntaxKind::Name_Lit);
-    }
-
-    fn parse_address(&mut self) {}
 
     fn parse_module_ident(&mut self) {
         self.builder.start_node(SyntaxKind::ModuleIdent.into());
@@ -67,7 +67,7 @@ impl<'i> Parser<'i> {
     fn parse(mut self) -> Parse {
         self.builder.start_node(SyntaxKind::File.into());
         loop {
-            let token = self.token_source.current();
+            let token = self.tokens.current();
             match token {
                 SyntaxKind::EOF => {
                     break;
@@ -78,8 +78,8 @@ impl<'i> Parser<'i> {
                 _ => unreachable!("unknown token {:?}", token),
             }
         }
-        while self.token_source.current() != SyntaxKind::EOF {
-            if self.token_source.current() == SyntaxKind::Use {
+        while self.tokens.current() != SyntaxKind::EOF {
+            if self.tokens.current() == SyntaxKind::Use {
                 self.parse_use();
             }
         }
@@ -89,22 +89,5 @@ impl<'i> Parser<'i> {
             green,
             errors: vec![],
         }
-    }
-}
-
-pub fn parse(text: &str) -> Parse {
-    let raw_tokens: Vec<_> = lexer::tokenize(text).collect();
-    let token_source = TextTokenSource::new(text, &raw_tokens);
-    Parser::new(token_source).parse()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_empty_file() {
-        let green = parse("use 0x0::Transaction;").to_syntax_node();
-        dbg!(green);
     }
 }
