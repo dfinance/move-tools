@@ -1,4 +1,4 @@
-use crate::parser::syntax_kind::SyntaxKind;
+use crate::rowan_parser::syntax_kind::SyntaxKind;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MoveLanguage;
@@ -21,9 +21,11 @@ pub type SyntaxElement = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;
 
 #[derive(Debug)]
 pub struct File(SyntaxNode);
+
+#[allow(dead_code)]
 impl File {
     fn cast(node: SyntaxNode) -> Option<Self> {
-        if node.kind() == SyntaxKind::File {
+        if node.kind() == SyntaxKind::SOURCE_FILE {
             Some(Self(node))
         } else {
             None

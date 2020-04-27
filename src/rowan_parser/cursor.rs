@@ -73,10 +73,7 @@ impl<'i> Cursor<'i> {
     }
 
     pub fn is_next(&self, s: &str) -> bool {
-        s.chars()
-            .enumerate()
-            .into_iter()
-            .all(|(i, c)| self.nth_char(i) == c)
+        s.chars().enumerate().all(|(i, c)| self.nth_char(i) == c)
     }
 
     pub fn consume_if_next(&mut self, s: &str) -> bool {

@@ -1,8 +1,5 @@
-use std::str::Chars;
-
-use crate::completion::get_keywords;
-use crate::parser::cursor::Cursor;
-use crate::parser::syntax_kind::SyntaxKind;
+use crate::rowan_parser::cursor::Cursor;
+use crate::rowan_parser::syntax_kind::SyntaxKind;
 use rowan::TextSize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -48,9 +45,9 @@ impl Cursor<'_> {
                 if self.consume_if_next("x") && self.initial_len > 2 {
                     self.consume_hex_digits();
                     if self.len_consumed() == 2 {
-                        SyntaxKind::Num_Lit
+                        SyntaxKind::NUM
                     } else {
-                        SyntaxKind::Address_Lit
+                        SyntaxKind::ADDRESS
                     }
                 } else {
                     self.consume_decimal_number()
@@ -61,9 +58,9 @@ impl Cursor<'_> {
                     // Search the current source line for a closing quote.
                     self.consume_while(|c| c != '"');
                     if self.is_eof() {
-                        SyntaxKind::ByteString_Lit_Unterminated
+                        SyntaxKind::BYTESTRING_UNTERMINATED
                     } else {
-                        SyntaxKind::ByteString_Lit
+                        SyntaxKind::BYTESTRING
                     }
                 } else {
                     self.consume_ident()
@@ -72,18 +69,18 @@ impl Cursor<'_> {
             'A'..='Z' | 'a'..='v' | 'y' | 'z' | '_' => self.consume_ident(),
             '&' => {
                 if self.consume_if_next("mut ") {
-                    SyntaxKind::AmpMut
+                    SyntaxKind::AMP_MUT
                 } else if self.consume_if_next("&") {
-                    SyntaxKind::AmpAmp
+                    SyntaxKind::AMP_AMP
                 } else {
-                    SyntaxKind::Amp
+                    SyntaxKind::AMP
                 }
             }
             '|' => {
                 if self.consume_if_next("|") {
-                    SyntaxKind::PipePipe
+                    SyntaxKind::PIPE_PIPE
                 } else {
-                    SyntaxKind::Pipe
+                    SyntaxKind::PIPE
                 }
             }
             '=' => {
@@ -97,9 +94,9 @@ impl Cursor<'_> {
             }
             '!' => {
                 if self.consume_if_next("=") {
-                    SyntaxKind::ExclaimEqual
+                    SyntaxKind::BANG_EQUAL
                 } else {
-                    SyntaxKind::Exclaim
+                    SyntaxKind::BANG
                 }
             }
             '<' => {
@@ -122,32 +119,32 @@ impl Cursor<'_> {
             }
             ':' => {
                 if self.consume_if_next(":") {
-                    SyntaxKind::ColonColon
+                    SyntaxKind::COLON_COLON
                 } else {
-                    SyntaxKind::Colon
+                    SyntaxKind::COLON
                 }
             }
-            '%' => SyntaxKind::Percent,
-            '(' => SyntaxKind::LParen,
-            ')' => SyntaxKind::RParen,
-            '[' => SyntaxKind::LBracket,
-            ']' => SyntaxKind::RBracket,
-            '*' => SyntaxKind::Star,
-            '+' => SyntaxKind::Plus,
-            ',' => SyntaxKind::Comma,
-            '-' => SyntaxKind::Minus,
+            '%' => SyntaxKind::PERCENT,
+            '(' => SyntaxKind::L_PAREN,
+            ')' => SyntaxKind::R_PAREN,
+            '[' => SyntaxKind::L_BRACK,
+            ']' => SyntaxKind::R_BRACK,
+            '*' => SyntaxKind::STAR,
+            '+' => SyntaxKind::PLUS,
+            ',' => SyntaxKind::COMMA,
+            '-' => SyntaxKind::MINUS,
             '.' => {
                 if self.consume_if_next(".") {
-                    SyntaxKind::PeriodPeriod
+                    SyntaxKind::DOT_DOT
                 } else {
-                    SyntaxKind::Period
+                    SyntaxKind::DOT
                 }
             }
-            '/' => SyntaxKind::Slash,
-            ';' => SyntaxKind::Semicolon,
+            '/' => SyntaxKind::SLASH,
+            ';' => SyntaxKind::SEMICOLON,
             '^' => SyntaxKind::Caret,
-            '{' => SyntaxKind::LBrace,
-            '}' => SyntaxKind::RBrace,
+            '{' => SyntaxKind::L_CURLY,
+            '}' => SyntaxKind::R_CURLY,
             _ => unreachable!(),
         };
         (syntax_kind, self.len_consumed())
@@ -155,7 +152,7 @@ impl Cursor<'_> {
 
     fn consume_whitespace(&mut self) -> SyntaxKind {
         self.consume_while(is_whitespace);
-        SyntaxKind::Whitespace
+        SyntaxKind::WHITESPACE
     }
 
     // Return the length of the substring containing characters in [0-9a-fA-F].
@@ -168,21 +165,21 @@ impl Cursor<'_> {
         self.consume_while(|c| matches!(c, '0'..='9'));
         if self.is_next("u8") {
             self.bump_n_times(2);
-            SyntaxKind::U8_Lit
+            SyntaxKind::NUM_U8
         } else if self.is_next("u64") {
             self.bump_n_times(3);
-            SyntaxKind::U64_Lit
+            SyntaxKind::NUM_U64
         } else if self.is_next("u128") {
             self.bump_n_times(4);
-            SyntaxKind::U128_Lit
+            SyntaxKind::NUM_U128
         } else {
-            SyntaxKind::Num_Lit
+            SyntaxKind::NUM
         }
     }
 
     fn consume_ident(&mut self) -> SyntaxKind {
         self.consume_while(|c| matches!(c, 'a'..='z' | 'A'..='Z' | '_' | '0'..='9'));
-        SyntaxKind::Ident
+        SyntaxKind::IDENT
     }
 }
 
@@ -193,35 +190,35 @@ fn get_name_token_kind(name: &str) -> SyntaxKind {
         "as" => SyntaxKind::As_Kw,
         "break" => SyntaxKind::Break_Kw,
         "continue" => SyntaxKind::Continue_Kw,
-        "copy" => SyntaxKind::Copy_Kw,
+        "copy" => SyntaxKind::COPY_KW,
         "copyable" => SyntaxKind::Copyable_Kw,
         "define" => SyntaxKind::Define_Kw,
         "else" => SyntaxKind::Else_Kw,
-        "false" => SyntaxKind::False,
+        "false" => SyntaxKind::FALSE,
         "fun" => SyntaxKind::Fun_Kw,
         "if" => SyntaxKind::If_Kw,
         "invariant" => SyntaxKind::Invariant_Kw,
         "let" => SyntaxKind::Let_Kw,
         "loop" => SyntaxKind::Loop_Kw,
         "module" => SyntaxKind::Module_Kw,
-        "move" => SyntaxKind::Move_Kw,
+        "move" => SyntaxKind::MOVE_KW,
         "native" => SyntaxKind::Native_Kw,
         "public" => SyntaxKind::Public_Kw,
         "resource" => SyntaxKind::Resource_Kw,
         "return" => SyntaxKind::Return_Kw,
         "spec" => SyntaxKind::Spec_Kw,
         "struct" => SyntaxKind::Struct_Kw,
-        "true" => SyntaxKind::True,
+        "true" => SyntaxKind::TRUE,
         "use" => SyntaxKind::Use_Kw,
         "while" => SyntaxKind::While_Kw,
-        _ => SyntaxKind::Name_Lit,
+        _ => SyntaxKind::NAME,
     }
 }
 
 /// Parses the first token from the provided input string.
 fn first_token(input: &str) -> (SyntaxKind, usize) {
     let (mut kind, len) = Cursor::new(input).advance();
-    if kind == SyntaxKind::Ident {
+    if kind == SyntaxKind::IDENT {
         kind = get_name_token_kind(&input[..len]);
     }
     (kind, len)

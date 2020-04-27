@@ -1,8 +1,7 @@
-use rowan::{GreenNodeBuilder, TextRange, TextSize};
+use rowan::{TextRange, TextSize};
 
-use crate::parser::lexer;
-use crate::parser::lexer::Token;
-use crate::parser::syntax_kind::SyntaxKind;
+use crate::rowan_parser::lexer::Token;
+use crate::rowan_parser::syntax_kind::SyntaxKind;
 
 pub fn syntax_kind_at(pos: usize, tokens: &[Token]) -> SyntaxKind {
     tokens.get(pos).map(|t| t.kind).unwrap_or(SyntaxKind::EOF)
@@ -20,7 +19,7 @@ impl<'t> Tokens<'t> {
     pub fn new(text: &'t str, raw_tokens: &'t [Token]) -> Tokens<'t> {
         let mut tokens = vec![];
         let mut start_offsets = vec![];
-        let mut last_token_offset = TextSize::zero();
+        let mut last_token_offset = TextSize::default();
         for &token in raw_tokens.iter() {
             if !token.kind.is_trivia() {
                 tokens.push(token);
@@ -41,10 +40,15 @@ impl<'t> Tokens<'t> {
         self.curr.0
     }
 
+    pub fn current_pos(&self) -> usize {
+        self.curr.1
+    }
+
     pub fn current_text(&self) -> &str {
         let pos = self.curr.1;
         let start = self.start_offsets.get(pos).unwrap();
-        let end = self.start_offsets.get(pos).unwrap_or(start);
+        let text_len = TextSize::of(self.text);
+        let end = self.start_offsets.get(pos + 1).unwrap_or(&text_len);
         &self.text[TextRange::new(*start, *end)]
     }
 

@@ -27,4 +27,4 @@ move-ir-types = { git = "https://github.com/dfinance/libra.git", branch = "publi
 move-lang = { git = "https://github.com/dfinance/libra.git", branch = "public-parsing-move" }
 libra-types = { git = "https://github.com/dfinance/libra.git", branch = "public-parsing-move" }
 
-rowan = { git = "https://github.com/rust-analyzer/rowan.git", rev = "f48af476c3406ef2a12dd5b9175dbc2c196c1b4d" }
+rowan = "0.10.0"
