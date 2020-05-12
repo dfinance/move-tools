@@ -12,7 +12,7 @@ use lsp_types::notification::{
 };
 use lsp_types::request::WorkspaceConfiguration;
 use lsp_types::{
-    ConfigurationItem, ConfigurationParams, MessageType, PublishDiagnosticsParams,
+    ConfigurationItem, ConfigurationParams, Diagnostic, MessageType, PublishDiagnosticsParams,
     ShowMessageParams, Url,
 };
 use ra_vfs::VfsTask;
@@ -226,6 +226,17 @@ fn on_request(
     Ok(())
 }
 
+fn diagnostic_as_string(d: &Diagnostic) -> String {
+    format!(
+        "({}, {}), ({}, {}): {}",
+        d.range.start.line,
+        d.range.start.character,
+        d.range.end.line,
+        d.range.end.character,
+        d.message
+    )
+}
+
 pub fn on_task(task: Task, msg_sender: &Sender<Message>) {
     match task {
         Task::Respond(response) => {
@@ -234,10 +245,20 @@ pub fn on_task(task: Task, msg_sender: &Sender<Message>) {
         Task::Diagnostic(loc_ds) => {
             for loc_d in loc_ds {
                 let uri = Url::from_file_path(loc_d.fpath).unwrap();
+
                 let mut diagnostics = vec![];
                 if loc_d.diagnostic.is_some() {
                     diagnostics.push(loc_d.diagnostic.unwrap());
                 }
+                log::info!(
+                    "Send diagnostic for file {:?}: {:#?}",
+                    loc_d.fpath,
+                    diagnostics
+                        .iter()
+                        .map(diagnostic_as_string)
+                        .collect::<Vec<String>>()
+                );
+
                 let params = PublishDiagnosticsParams::new(uri, diagnostics, None);
                 let not = notification_new::<PublishDiagnostics>(params);
                 msg_sender.send(not.into()).unwrap();
@@ -358,7 +379,6 @@ fn update_file_notifications_on_threadpool(
             let from_file_compile_check = analysis.check_with_libra_compiler(fpath, text);
             diagnostics.extend(from_file_compile_check);
         }
-        log::info!("diagnostics from check = {:?}", diagnostics);
         task_sender.send(Task::Diagnostic(diagnostics)).unwrap();
     })
 }

@@ -108,17 +108,12 @@ impl RootDatabase {
             Some(text) => text.clone(),
             None => {
                 anyhow::bail!(
-                    "File {:?} in not present in the available files {:#?}",
+                    "File {:?} is not present in the available files {:#?}",
                     file,
                     &self.available_files.keys()
                 );
             }
         };
-        // let text = self
-        //     .available_files
-        //     .get(loc.file())
-        //     .unwrap_or_else(|| panic!("No entry found for key {:?}", loc.file()))
-        //     .clone();
         let file = File::new(text);
         let start_pos = file.position(loc.span().start().to_usize()).unwrap();
         let end_pos = file.position(loc.span().end().to_usize()).unwrap();
