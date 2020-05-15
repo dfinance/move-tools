@@ -444,6 +444,21 @@ address wallet1me0cdn52672y7feddy7tgcj6j4dkzq2su745vh {
 address wallet1me0cdn52672y7feddy7tgcj6j4dkzq2su745vh {
     module Debug {
         public fun main() {
+            let addr = wallet1me0cdn52672y7feddy7tgcj6j4dkzq2su745vh;
+        }
+    }
+}
+    ";
+        let errors = diagnostics(invalid_source_text);
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].message, "Unused assignment or binding for local 'addr'. Consider removing or replacing it with '_'");
+        assert_eq!(errors[0].range, range((4, 16), (4, 20)));
+
+        let invalid_source_text = r"
+address wallet1me0cdn52672y7feddy7tgcj6j4dkzq2su745vh {
+    module Debug {
+        public fun main() {
+            let _ = wallet1me0cdn52672y7feddy7tgcj6j4dkzq2su745vh;
             let _ = wallet1me0cdn52672y7feddy7tgcj6j4dkzq2su745vh;
             let _: u10;
         }
@@ -452,7 +467,7 @@ address wallet1me0cdn52672y7feddy7tgcj6j4dkzq2su745vh {
     ";
         let errors = diagnostics(invalid_source_text);
         assert_eq!(errors.len(), 1);
-        assert_eq!(errors[0].message, "Unbound type \'u10\' in current scope");
-        assert_eq!(errors[0].range, range((5, 19), (5, 22)))
+        assert_eq!(errors[0].message, "Unbound type 'u10' in current scope");
+        assert_eq!(errors[0].range, range((6, 19), (6, 22)));
     }
 }

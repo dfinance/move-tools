@@ -50,9 +50,8 @@ pub fn replace_bech32_addresses(source: &str) -> (String, OffsetsMap) {
             continue;
         }
         if let Ok(libra_address) = bech32_into_libra(address) {
-            let start = item.start();
-            let end = item.end();
-            offsets_map.insert((last_interval_pos, start), overall_offset);
+            let end = item.end() + overall_offset;
+            offsets_map.insert((last_interval_pos, end), overall_offset);
             last_interval_pos = end;
 
             let libra_address_s = format!("0x{}", libra_address);
