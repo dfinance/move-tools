@@ -396,4 +396,27 @@ address 0x0 {
         );
         assert!(errors.is_empty(), "{:?}", errors);
     }
+
+    #[test]
+    fn bech32_addresses_are_allowed() {
+        let source_text = r"
+address wallet1me0cdn52672y7feddy7tgcj6j4dkzq2su745vh {
+    module Debug {
+    }
+}
+    ";
+        let errors = diagnostics(source_text);
+        assert!(errors.is_empty(), "{:?}", errors);
+
+        let invalid_source_text = r"
+address wallet1me0cdn52672y7feddy7tgcj6j4dkzq2su745vh {
+    module Debug {
+        pubic fun main() {}
+    }
+}
+    ";
+        let errors = diagnostics(invalid_source_text);
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].range, range((3, 8), (3, 13)))
+    }
 }
