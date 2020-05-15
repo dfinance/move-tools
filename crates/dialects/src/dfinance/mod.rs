@@ -124,7 +124,7 @@ pub fn parse_files(
     let (s_fpath, s_text) = current;
     let mut parse_errors = CompilerErrors::default();
 
-    let mut project_offsets_map = ProjectOffsetsMap::new();
+    let mut project_offsets_map = ProjectOffsetsMap::default();
     let script_defs = match parse_file(s_fpath, &s_text) {
         Ok((defs, offsets_map)) => {
             project_offsets_map.0.insert(s_fpath, offsets_map);

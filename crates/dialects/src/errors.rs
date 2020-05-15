@@ -7,12 +7,8 @@ pub type OffsetsMap = HashMap<(usize, usize), usize>;
 pub struct ProjectOffsetsMap(pub HashMap<FilePath, OffsetsMap>);
 
 impl ProjectOffsetsMap {
-    pub fn new() -> ProjectOffsetsMap {
-        ProjectOffsetsMap::default()
-    }
-
     pub fn with_file_map(fpath: FilePath, map: OffsetsMap) -> ProjectOffsetsMap {
-        let mut project_map = ProjectOffsetsMap::new();
+        let mut project_map = ProjectOffsetsMap::default();
         project_map.0.insert(fpath, map);
         project_map
     }
