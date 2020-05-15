@@ -2,6 +2,7 @@ use crate::changes::{changes_into_writeset, ResourceChange};
 use crate::dfinance;
 
 use crate::dfinance::types::{AccountAddress, Error, VMResult};
+use crate::dfinance::Errors;
 use libra_types::vm_error::StatusCode;
 use libra_types::write_set::WriteOp;
 use utils::FilePath;
@@ -12,7 +13,7 @@ pub fn compile_and_run(
     deps: &[(FilePath, String)],
     sender: String,
     genesis: Vec<ResourceChange>,
-) -> Result<VMResult<Vec<ResourceChange>>, Vec<Error>> {
+) -> Result<VMResult<Vec<ResourceChange>>, Errors> {
     let sender = AccountAddress::from_hex_literal(&sender).unwrap();
     let (fname, script_text) = script;
 
