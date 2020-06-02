@@ -1,0 +1,27 @@
+use std::fmt;
+use std::fmt::Debug;
+use syntax::ast::SourceFile;
+use tree_sitter::{
+    Language, Node, Parser, Query, QueryCapture, QueryCursor, QueryMatch, TreeCursor,
+};
+
+#[link(name = "tree-sitter-move")]
+extern "C" {
+    fn tree_sitter_move() -> Language;
+}
+
+fn main() {
+    let language = unsafe { tree_sitter_move() };
+    let mut parser = Parser::new();
+    if let Err(err_message) = parser.set_language(language) {
+        dbg!(err_message);
+        std::process::exit(1);
+    }
+
+    let source_code = "module Module { public fun main() { let a = 0; 0 } }";
+    let tree = parser.parse(source_code, None).unwrap();
+    println!("{:?}", tree.root_node().to_sexp());
+
+    let file = SourceFile::new(source_code, tree.root_node());
+    dbg!(file);
+}

@@ -1,0 +1,67 @@
+use core::fmt;
+use tree_sitter::Node;
+
+{% for ast_node in ast_nodes %}
+    pub struct {{ ast_node.name }}<'a> {
+        source: &'a str,
+        node: Node<'a>
+    }
+
+    impl<'a> fmt::Debug for {{ ast_node.name }}<'a> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.debug_struct("{{ ast_node.name }}")
+            {% for field in ast_node.fields %}
+                .field("{{ field.name }}", &self.{{ field.name }}())
+            {% endfor %}
+                .finish()
+        }
+    }
+
+    impl<'a> {{ ast_node.name }}<'a> {
+        pub fn new(source: &'a str, node: Node<'a>) -> Self {
+            {{ ast_node.name }} { source, node }
+        }
+
+        {% for field in ast_node.fields %}
+            {% if field.kind == "string" %}
+
+        pub fn {{ field.name }}(&self) -> Option<&str> {
+            self.node
+                .child_by_field_name("{{ field.name }}")
+                .map(|node| node.utf8_text(self.source.as_bytes()).unwrap())
+        }
+
+            {% endif %}
+
+            {% if field.kind == "node" %}
+
+        pub fn {{ field.name }}(&self) -> Option<{{ field.type_name }}> {
+            self.node.named_child(0).map(|node| {{ field.type_name }} {
+                source: self.source,
+                node,
+            })
+        }
+
+            {% endif %}
+
+            {% if field.kind == "proxy_array" %}
+
+        pub fn {{ field.name }}(&self) -> Option<Vec<{{ field.type_name }}>> {
+            self.node
+                .child_by_field_name("{{ field.name }}")
+                .map(|node| {
+                    let mut cursor = self.node.walk();
+                    node
+                        .named_children(&mut cursor)
+                        .map(|node| {{ field.type_name }} {
+                            source: self.source,
+                            node,
+                        })
+                        .collect()
+                })
+        }
+
+            {% endif %}
+        {% endfor %}
+    }
+{% endfor %}
