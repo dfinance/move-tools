@@ -14,7 +14,7 @@ fn main() {
         std::process::exit(1);
     }
 
-    let source_code = "module Module { public fun main() { let a = 1 + 1 * 2 / 3 } }";
+    let source_code = "module Module { public fun main() { func(&mut 1); } }";
     let tree = parser.parse(source_code, None).unwrap();
     println!("{:?}", tree.root_node().to_sexp());
 

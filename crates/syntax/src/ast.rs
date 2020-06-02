@@ -184,9 +184,9 @@ impl<'a> UseDecl<'a> {
     define_named_ident_literal!(module);
 }
 
-define_ast_node!(StructField, [field, typ]);
+define_ast_node!(FieldDef, [field, typ]);
 
-impl<'a> StructField<'a> {
+impl<'a> FieldDef<'a> {
     define_named_ident_literal!(field);
     define_type_field!(typ);
 }
@@ -202,7 +202,7 @@ define_ast_node!(StructDef, [name, type_parameters, fields]);
 impl<'a> StructDef<'a> {
     define_named_ident_literal!(name);
     define_proxy_array_named_field!(type_parameters, TypeParam);
-    define_proxy_array_named_field!(fields, StructField);
+    define_proxy_array_named_field!(fields, FieldDef);
 }
 
 define_ast_node!(NativeStructDef, [name]);
@@ -453,20 +453,48 @@ impl<'a> LoopExpr<'a> {
 // **********************************************************************************
 #[derive(Debug)]
 pub enum UnaryExpr<'a> {
-    UnaryOp(UnaryOpExpr<'a>),
+    Not(NotExpr<'a>),
+    Borrow(BorrowExpr<'a>),
+    Deref(DerefExpr<'a>),
+    MoveOrCopy(MoveOrCopyExpr<'a>),
     Term(Term<'a>),
 }
 
 impl<'a> UnaryExpr<'a> {
     pub fn new(source: &'a str, node: Node<'a>) -> Self {
         match node.kind() {
-            "unary_expression" => UnaryExpr::UnaryOp(UnaryOpExpr::new(source, node)),
+            "unary_expression" => UnaryExpr::Not(NotExpr::new(source, node)),
+            "borrow_expression" => UnaryExpr::Borrow(BorrowExpr::new(source, node)),
+            "dereference_expression" => UnaryExpr::Deref(DerefExpr::new(source, node)),
+            "move_or_copy_expression" => UnaryExpr::MoveOrCopy(MoveOrCopyExpr::new(source, node)),
             _ => UnaryExpr::Term(Term::new(source, node)),
         }
     }
 }
 
-define_ast_node!(UnaryOpExpr, []);
+define_ast_node!(NotExpr, [exp]);
+
+impl<'a> NotExpr<'a> {
+    define_named_field!(exp, UnaryExpr);
+}
+
+define_ast_node!(BorrowExpr, [exp]);
+
+impl<'a> BorrowExpr<'a> {
+    define_named_field!(exp, UnaryExpr);
+}
+
+define_ast_node!(DerefExpr, [exp]);
+
+impl<'a> DerefExpr<'a> {
+    define_named_field!(exp, UnaryExpr);
+}
+
+define_ast_node!(MoveOrCopyExpr, [exp]);
+
+impl<'a> MoveOrCopyExpr<'a> {
+    define_named_ident_literal!(exp);
+}
 
 // Terminals
 // **********************************************************************************
@@ -474,8 +502,12 @@ define_ast_node!(UnaryOpExpr, []);
 pub enum Term<'a> {
     Break(BreakExpr<'a>),
     Continue(ContinueExpr<'a>),
-    Block(Block<'a>),
+    Name(NameExpr<'a>),
+    Pack(PackExpr<'a>),
+    Call(CallExpr<'a>),
     Literal(Literal<'a>),
+    ExprList(ExprList<'a>),
+    Block(Block<'a>),
 }
 
 impl<'a> Term<'a> {
@@ -483,6 +515,10 @@ impl<'a> Term<'a> {
         match node.kind() {
             "break_expression" => Term::Break(BreakExpr::new(source, node)),
             "continue_expression" => Term::Continue(ContinueExpr::new(source, node)),
+            "name_expression" => Term::Name(NameExpr::new(source, node)),
+            "pack_expression" => Term::Pack(PackExpr::new(source, node)),
+            "call_expression" => Term::Call(CallExpr::new(source, node)),
+            "expression_list" => Term::ExprList(ExprList::new(source, node)),
             "block" => Term::Block(Block::new(source, node)),
             kind if kind.ends_with("literal") => Term::Literal(Literal::new(source, node)),
             _ => unreachable!("{}", node.kind()),
@@ -492,6 +528,45 @@ impl<'a> Term<'a> {
 
 define_ast_node!(BreakExpr, []);
 define_ast_node!(ContinueExpr, []);
+define_ast_node!(ExprList, [items]);
+
+impl<'a> ExprList<'a> {
+    pub fn items(&self) -> Vec<Expr> {
+        let mut cursor = self.node.walk();
+        self.node
+            .named_children(&mut cursor)
+            .map(|node| Expr::new(self.source, node))
+            .collect()
+    }
+}
+
+define_ast_node!(NameExpr, [fully_qual_name, type_arguments]);
+
+impl<'a> NameExpr<'a> {
+    define_field_from_first_child!(fully_qual_name, ModuleAccess);
+    define_proxy_array_named_field!(type_arguments, Type);
+}
+
+define_ast_node!(CallExpr, [name, args]);
+
+impl<'a> CallExpr<'a> {
+    define_field_from_first_child!(name, NameExpr);
+    define_proxy_array_named_field!(args, Expr);
+}
+
+define_ast_node!(PackExpr, [name, body]);
+
+impl<'a> PackExpr<'a> {
+    define_field_from_first_child!(name, NameExpr);
+    define_proxy_array_named_field!(body, FieldAssignment);
+}
+
+define_ast_node!(FieldAssignment, [field, exp]);
+
+impl<'a> FieldAssignment<'a> {
+    define_named_ident_literal!(field);
+    define_named_field!(exp, Expr);
+}
 
 // Literals
 // **********************************************************************************
