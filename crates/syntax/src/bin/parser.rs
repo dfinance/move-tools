@@ -1,6 +1,4 @@
-use std::fmt;
-use std::fmt::Debug;
-use syntax::ast::SourceFile;
+use syntax::ast::{Definition, SourceFile};
 use tree_sitter::{
     Language, Node, Parser, Query, QueryCapture, QueryCursor, QueryMatch, TreeCursor,
 };
@@ -18,10 +16,13 @@ fn main() {
         std::process::exit(1);
     }
 
-    let source_code = "module Module { public fun main() { let a = 0; 0 } }";
+    let source_code = "module Module { public fun main() { let a = 1 + 1 * 2 / 3 } }";
     let tree = parser.parse(source_code, None).unwrap();
     println!("{:?}", tree.root_node().to_sexp());
 
     let file = SourceFile::new(source_code, tree.root_node());
-    dbg!(file);
+    if let Some(Definition::Module(module)) = file.definition() {
+        let items = module.body().unwrap();
+        dbg!(&items[0]);
+    }
 }

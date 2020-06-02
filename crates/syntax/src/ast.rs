@@ -4,6 +4,7 @@ use tree_sitter::Node;
 
 macro_rules! define_ast_node {
     ($struct_ident: ident, [$($field_name: ident),*]) => {
+        #[allow(dead_code)]
         pub struct $struct_ident<'a> {
             source: &'a str,
             node: Node<'a>,
@@ -77,15 +78,15 @@ macro_rules! define_field_from_first_child {
     };
 }
 
-macro_rules! define_field_from_last_child {
-    ($field_name: ident, $ast_type: ident) => {
-        pub fn $field_name(&self) -> Option<$ast_type> {
-            self.node
-                .named_child(self.named_child_count() - 1)
-                .map(|node| $ast_type::new(self.source, node))
-        }
-    };
-}
+// macro_rules! define_field_from_last_child {
+//     ($field_name: ident, $ast_type: ident) => {
+//         pub fn $field_name(&self) -> Option<$ast_type> {
+//             self.node
+//                 .named_child(self.named_child_count() - 1)
+//                 .map(|node| $ast_type::new(self.source, node))
+//         }
+//     };
+// }
 
 macro_rules! define_proxy_array_named_field {
     ($field_name: ident, $ast_type: ident) => {
@@ -376,15 +377,29 @@ impl<'a> ModuleAccess<'a> {
 // **********************************************************************************
 #[derive(Debug)]
 pub enum Expr<'a> {
-    LambdaExpr(LambdaExpr<'a>),
-    UnaryExpr(UnaryExpr<'a>),
+    Lambda(LambdaExpr<'a>),
+    Loop(LoopExpr<'a>),
+    While(WhileExpr<'a>),
+    If(IfExpr<'a>),
+    Return(ReturnExpr<'a>),
+    Abort(AbortExpr<'a>),
+    Assign(AssignExpr<'a>),
+    Binary(BinaryExpr<'a>),
+    Unary(UnaryExpr<'a>),
 }
 
 impl<'a> Expr<'a> {
     pub fn new(source: &'a str, node: Node<'a>) -> Self {
         match node.kind() {
-            "lambda_expression" => Expr::LambdaExpr(LambdaExpr::new(source, node)),
-            _ => Expr::UnaryExpr(UnaryExpr::new(source, node)),
+            "lambda_expression" => Expr::Lambda(LambdaExpr::new(source, node)),
+            "loop_expression" => Expr::Loop(LoopExpr::new(source, node)),
+            "if_expression" => Expr::If(IfExpr::new(source, node)),
+            "while_expression" => Expr::While(WhileExpr::new(source, node)),
+            "return_expression" => Expr::Return(ReturnExpr::new(source, node)),
+            "abort_expression" => Expr::Abort(AbortExpr::new(source, node)),
+            "assign_expression" => Expr::Assign(AssignExpr::new(source, node)),
+            "binary_expression" => Expr::Binary(BinaryExpr::new(source, node)),
+            _ => Expr::Unary(UnaryExpr::new(source, node)),
         }
     }
 }
@@ -398,9 +413,40 @@ impl<'a> LambdaExpr<'a> {
 
 define_ast_node!(IfExpr, []);
 
-impl<'a> IfExpr<'a> {
-    define_proxy_array_named_field!(bindings, Bind);
-    define_named_field!(exp, Expr);
+define_ast_node!(WhileExpr, []);
+
+define_ast_node!(ReturnExpr, []);
+
+define_ast_node!(AbortExpr, []);
+
+define_ast_node!(AssignExpr, []);
+
+define_ast_node!(BinaryExpr, [lhs, operator, rhs]);
+
+impl<'a> BinaryExpr<'a> {
+    define_named_field!(lhs, BinaryOperand);
+    define_named_ident_literal!(operator);
+    define_named_field!(rhs, BinaryOperand);
+}
+
+#[derive(Debug)]
+pub enum BinaryOperand<'a> {
+    BinaryExpr(BinaryExpr<'a>),
+    UnaryExpr(UnaryExpr<'a>),
+}
+impl<'a> BinaryOperand<'a> {
+    pub fn new(source: &'a str, node: Node<'a>) -> Self {
+        match node.kind() {
+            "binary_expression" => BinaryOperand::BinaryExpr(BinaryExpr::new(source, node)),
+            _ => BinaryOperand::UnaryExpr(UnaryExpr::new(source, node)),
+        }
+    }
+}
+
+define_ast_node!(LoopExpr, [body]);
+
+impl<'a> LoopExpr<'a> {
+    define_named_field!(body, Block);
 }
 
 // Unary Expression
@@ -418,21 +464,32 @@ impl<'a> UnaryExpr<'a> {
     }
 }
 
+define_ast_node!(UnaryOpExpr, []);
+
 // Terminals
 // **********************************************************************************
 #[derive(Debug)]
 pub enum Term<'a> {
+    Break(BreakExpr<'a>),
+    Continue(ContinueExpr<'a>),
+    Block(Block<'a>),
     Literal(Literal<'a>),
 }
 
 impl<'a> Term<'a> {
     pub fn new(source: &'a str, node: Node<'a>) -> Self {
         match node.kind() {
+            "break_expression" => Term::Break(BreakExpr::new(source, node)),
+            "continue_expression" => Term::Continue(ContinueExpr::new(source, node)),
+            "block" => Term::Block(Block::new(source, node)),
             kind if kind.ends_with("literal") => Term::Literal(Literal::new(source, node)),
-            _ => unreachable!(),
+            _ => unreachable!("{}", node.kind()),
         }
     }
 }
+
+define_ast_node!(BreakExpr, []);
+define_ast_node!(ContinueExpr, []);
 
 // Literals
 // **********************************************************************************
@@ -456,7 +513,3 @@ impl<'a> Literal<'a> {
         }
     }
 }
-
-// define_enum!(Literal, {});
-
-// define_ast_node!(AddressLiteral, []);
