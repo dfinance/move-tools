@@ -453,12 +453,14 @@ impl<'a> LoopExpr<'a> {
 // **********************************************************************************
 #[derive(Debug)]
 pub enum UnaryExpr<'a> {
+    UnaryOp(UnaryOpExpr<'a>),
     Term(Term<'a>),
 }
 
 impl<'a> UnaryExpr<'a> {
     pub fn new(source: &'a str, node: Node<'a>) -> Self {
         match node.kind() {
+            "unary_expression" => UnaryExpr::UnaryOp(UnaryOpExpr::new(source, node)),
             _ => UnaryExpr::Term(Term::new(source, node)),
         }
     }

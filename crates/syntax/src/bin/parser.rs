@@ -1,7 +1,5 @@
 use syntax::ast::{Definition, SourceFile};
-use tree_sitter::{
-    Language, Node, Parser, Query, QueryCapture, QueryCursor, QueryMatch, TreeCursor,
-};
+use tree_sitter::{Language, Parser};
 
 #[link(name = "tree-sitter-move")]
 extern "C" {
