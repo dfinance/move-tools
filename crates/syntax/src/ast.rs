@@ -506,6 +506,7 @@ pub enum Term<'a> {
     Pack(PackExpr<'a>),
     Call(CallExpr<'a>),
     Literal(Literal<'a>),
+    Unit(UnitExpr<'a>),
     ExprList(ExprList<'a>),
     Block(Block<'a>),
 }
@@ -518,6 +519,7 @@ impl<'a> Term<'a> {
             "name_expression" => Term::Name(NameExpr::new(source, node)),
             "pack_expression" => Term::Pack(PackExpr::new(source, node)),
             "call_expression" => Term::Call(CallExpr::new(source, node)),
+            "unit_expression" => Term::Unit(UnitExpr::new(source, node)),
             "expression_list" => Term::ExprList(ExprList::new(source, node)),
             "block" => Term::Block(Block::new(source, node)),
             kind if kind.ends_with("literal") => Term::Literal(Literal::new(source, node)),
@@ -529,6 +531,7 @@ impl<'a> Term<'a> {
 define_ast_node!(BreakExpr, []);
 define_ast_node!(ContinueExpr, []);
 define_ast_node!(ExprList, [items]);
+define_ast_node!(UnitExpr, []);
 
 impl<'a> ExprList<'a> {
     pub fn items(&self) -> Vec<Expr> {
