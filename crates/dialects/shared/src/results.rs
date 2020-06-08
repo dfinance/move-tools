@@ -27,6 +27,7 @@ impl Display for ResourceType {
 pub struct ChainStateChanges {
     pub resource_changes: Vec<ResourceChange>,
     pub gas_spent: u64,
+    pub events: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]

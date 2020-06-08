@@ -16,6 +16,7 @@ use dfin_move_vm_types::values::GlobalValue;
 use dfin_vm::errors::{vm_error, Location, VMResult};
 use shared::results::ResourceChange;
 use std::collections::HashMap;
+use std::ops::Deref;
 
 fn convert_set_value(struct_type: &FatStructType, val: GlobalValue) -> VMResult<Vec<u8>> {
     // into_owned_struct will check if all references are properly released at the end of a transaction
@@ -70,6 +71,14 @@ impl<'txn> DataCache<'txn> {
             }
         }
         Ok(resources)
+    }
+
+    pub fn events(&self) -> Vec<serde_json::Value> {
+        self.inner
+            .event_data()
+            .iter()
+            .map(|event| serde_json::to_value(event.deref()).unwrap())
+            .collect()
     }
 }
 

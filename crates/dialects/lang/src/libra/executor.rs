@@ -112,6 +112,7 @@ pub fn execute_script(
     .map_err(vm_status_into_exec_status)
     .with_context(|| "Script execution error")?;
 
+    let events = data_cache.events();
     let resource_changes = data_cache
         .resource_changes()
         .map_err(vm_status_into_exec_status)
@@ -120,6 +121,7 @@ pub fn execute_script(
     Ok(ChainStateChanges {
         resource_changes,
         gas_spent,
+        events,
     })
 }
 

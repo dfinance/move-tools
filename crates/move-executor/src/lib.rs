@@ -74,6 +74,7 @@ pub fn compile_and_execute_script(
     }
     Ok(serde_json::json!({
         "changes": serde_json::to_value(normalized_changes).unwrap(),
-        "gas_spent": chain_state.gas_spent
+        "gas_spent": chain_state.gas_spent,
+        "events": chain_state.events
     }))
 }
