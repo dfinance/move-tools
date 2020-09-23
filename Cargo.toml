@@ -1,9 +1,9 @@
 [workspace]
 members = [
-    "crates/move-language-server",
-    "crates/analysis",
-    "crates/move-executor",
-    "crates/dialects",
-    "crates/utils",
-    "crates/integration_tests"
+    "mls/move-language-server",
+    "mls/analysis",
+    "mls/move-executor",
+    "mls/dialects",
+    "mls/utils",
+    "mls/integration_tests"
 ]

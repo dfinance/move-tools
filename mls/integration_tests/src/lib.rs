@@ -27,8 +27,6 @@ pub fn get_test_resources_dir() -> PathBuf {
         .unwrap()
         .parent() // crates/
         .unwrap()
-        .parent() // project root
-        .unwrap()
         .join("resources")
         .join("tests")
 }
