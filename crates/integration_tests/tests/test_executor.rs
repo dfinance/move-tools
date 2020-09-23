@@ -1,7 +1,7 @@
 use dialects::shared::errors::ExecCompilerError;
 use move_executor::compile_and_execute_script;
 
-use integration_tests::{
+use mls_integration_tests::{
     existing_module_file_abspath, get_modules_path, get_script_path, modules_mod, stdlib_mod,
 };
 use utils::leaked_fpath;

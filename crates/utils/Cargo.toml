@@ -1,5 +1,5 @@
 [package]
-name = "utils"
+name = "mls-utils"
 version = "0.1.0"
 authors = ["Maksim Kurnikov <maxim.kurnikov@gmail.com>"]
 edition = "2018"

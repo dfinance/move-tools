@@ -80,26 +80,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "analysis"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "codespan 0.8.0",
- "codespan 0.9.5",
- "codespan-reporting 0.8.0",
- "codespan-reporting 0.9.5",
- "crossbeam-channel",
- "dialects",
- "env_logger",
- "hex",
- "log",
- "lsp-types",
- "serde",
- "serde_json",
- "utils",
-]
-
-[[package]]
 name = "ansi_term"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -687,35 +667,6 @@ dependencies = [
  "proc-macro2 1.0.23",
  "quote 1.0.7",
  "syn 1.0.42",
-]
-
-[[package]]
-name = "dialects"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bech32",
- "codespan 0.8.0",
- "hex",
- "language-e2e-tests",
- "lazy_static",
- "libra-canonical-serialization 0.1.0 (git+https://github.com/dfinance/libra.git?branch=15.09.2020)",
- "libra-crypto 0.1.0 (git+https://github.com/dfinance/libra.git?branch=15.09.2020)",
- "libra-state-view",
- "libra-types",
- "move-core-types 0.1.0 (git+https://github.com/dfinance/libra.git?branch=15.09.2020)",
- "move-core-types 0.1.0 (git+https://github.com/dfinance/libra.git)",
- "move-ir-types",
- "move-lang",
- "move-vm-runtime",
- "move-vm-types",
- "regex",
- "serde",
- "serde_derive",
- "serde_json",
- "utils",
- "vm",
- "vm-genesis",
 ]
 
 [[package]]
@@ -1395,25 +1346,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "63312a18f7ea8760cdd0a7c5aac1a619752a246b833545e3e36d1f81f7cd9e66"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "integration_tests"
-version = "0.1.0"
-dependencies = [
- "analysis",
- "anyhow",
- "crossbeam-channel",
- "dialects",
- "env_logger",
- "log",
- "lsp-server",
- "lsp-types",
- "move-executor",
- "move-language-server",
- "serde_json",
- "threadpool",
- "utils",
 ]
 
 [[package]]
@@ -2229,6 +2161,84 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b48e78b8626927bd980dff38d8147006323f5d7634d7bc9e31c3a59e07da1b28"
 
 [[package]]
+name = "mls-analysis"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "codespan 0.8.0",
+ "codespan 0.9.5",
+ "codespan-reporting 0.8.0",
+ "codespan-reporting 0.9.5",
+ "crossbeam-channel",
+ "env_logger",
+ "hex",
+ "log",
+ "lsp-types",
+ "mls-dialects",
+ "mls-utils",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "mls-dialects"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bech32",
+ "codespan 0.8.0",
+ "hex",
+ "language-e2e-tests",
+ "lazy_static",
+ "libra-canonical-serialization 0.1.0 (git+https://github.com/dfinance/libra.git?branch=15.09.2020)",
+ "libra-crypto 0.1.0 (git+https://github.com/dfinance/libra.git?branch=15.09.2020)",
+ "libra-state-view",
+ "libra-types",
+ "mls-utils",
+ "move-core-types 0.1.0 (git+https://github.com/dfinance/libra.git?branch=15.09.2020)",
+ "move-core-types 0.1.0 (git+https://github.com/dfinance/libra.git)",
+ "move-ir-types",
+ "move-lang",
+ "move-vm-runtime",
+ "move-vm-types",
+ "regex",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "vm",
+ "vm-genesis",
+]
+
+[[package]]
+name = "mls-integration_tests"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "crossbeam-channel",
+ "env_logger",
+ "log",
+ "lsp-server",
+ "lsp-types",
+ "mls-analysis",
+ "mls-dialects",
+ "mls-utils",
+ "move-executor",
+ "move-language-server",
+ "serde_json",
+ "threadpool",
+]
+
+[[package]]
+name = "mls-utils"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "log",
+ "ra_vfs",
+ "walkdir",
+]
+
+[[package]]
 name = "move-core-types"
 version = "0.1.0"
 source = "git+https://github.com/dfinance/libra.git?branch=15.09.2020#ab8fa75bd710b49e621f3bbd834a26af76160690"
@@ -2277,11 +2287,11 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "dialects",
  "libra-types",
+ "mls-dialects",
+ "mls-utils",
  "serde",
  "serde_json",
- "utils",
 ]
 
 [[package]]
@@ -2330,7 +2340,6 @@ dependencies = [
 name = "move-language-server"
 version = "0.4.0"
 dependencies = [
- "analysis",
  "anyhow",
  "build-info",
  "build-info-build",
@@ -2339,16 +2348,17 @@ dependencies = [
  "codespan-reporting 0.8.0",
  "codespan-reporting 0.9.5",
  "crossbeam-channel",
- "dialects",
  "env_logger",
  "hex",
  "log",
  "lsp-server",
  "lsp-types",
+ "mls-analysis",
+ "mls-dialects",
+ "mls-utils",
  "serde",
  "serde_json",
  "threadpool",
- "utils",
  "walkdir",
 ]
 
@@ -4104,16 +4114,6 @@ dependencies = [
  "matches",
  "percent-encoding",
  "serde",
-]
-
-[[package]]
-name = "utils"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "log",
- "ra_vfs",
- "walkdir",
 ]
 
 [[package]]

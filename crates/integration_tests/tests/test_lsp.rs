@@ -9,7 +9,7 @@ use analysis::config::Config;
 
 use dialects::DialectName;
 
-use integration_tests::{config, get_script_path};
+use mls_integration_tests::{config, get_script_path};
 
 use lsp_types::notification::{DidChangeConfiguration, DidChangeWatchedFiles, Initialized};
 

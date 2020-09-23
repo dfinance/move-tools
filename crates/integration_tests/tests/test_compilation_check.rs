@@ -4,7 +4,7 @@ use analysis::analysis::Analysis;
 
 use analysis::config::Config;
 use analysis::db::FileDiagnostic;
-use integration_tests::{get_modules_path, get_test_resources_dir, global_state_snapshot};
+use mls_integration_tests::{get_modules_path, get_test_resources_dir, global_state_snapshot};
 use move_language_server::global_state::GlobalState;
 
 use crossbeam_channel::unbounded;
@@ -72,7 +72,9 @@ mod tests {
     use super::*;
     use analysis::db::RootDatabase;
 
-    use integration_tests::{config, get_modules_path, get_script_path, get_stdlib_path, modules_mod};
+    use mls_integration_tests::{
+        config, get_modules_path, get_script_path, get_stdlib_path, modules_mod,
+    };
     use utils::{leaked_fpath, FilesSourceText};
 
     #[test]

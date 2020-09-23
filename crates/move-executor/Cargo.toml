@@ -14,5 +14,5 @@ clap = "2.33.1"
 
 libra-types = { git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
 
-dialects = { path = "../dialects" }
-utils = { path = "../utils" }
+dialects = { package = "mls-dialects", path = "../dialects" }
+utils = { package = "mls-utils", path = "../utils" }
