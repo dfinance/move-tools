@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate include_dir;
 use include_dir::Dir;
-use libra::vm::file_format::{CompiledModule, CompiledScript};
+use libra::module::{CompiledModule, CompiledScript};
 use move_compat::adapt;
 
 static MODULES_TESTS_DIR: Dir = include_dir!("tests/libra_std/modules");
