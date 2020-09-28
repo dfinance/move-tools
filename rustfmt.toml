@@ -1,8 +1,8 @@
-max_width = 98
 edition = "2018"
-
-# automatically replace R { x: x } with R { x }
+max_width = 98
 use_field_init_shorthand = true
-
-# disable alphabetical import reordering within groups
-reorder_imports = false
+reorder_imports = false # Reorder import statements alphabetically
+fn_args_layout = "Tall"
+# indent_style = "Visual"
+# blank_lines_upper_bound = 2 # Maximum number of blank lines which can be put between items.
+# blank_lines_lower_bound = 0 # Minimum number of blank lines which must be put between items.

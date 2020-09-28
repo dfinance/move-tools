@@ -1,5 +1,8 @@
 [workspace]
 members = [
+    "libra",
+    "compat",
+    # MLS:
     "mls/move-language-server",
     "mls/analysis",
     "mls/move-executor",
