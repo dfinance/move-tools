@@ -2,11 +2,10 @@
 members = [
     "libra",
     "compat",
-    # MLS:
-    "mls/move-language-server",
-    "mls/analysis",
-    "mls/move-executor",
-    "mls/dialects",
-    "mls/utils",
-    "mls/integration_tests"
+    "crates/move-language-server", # MLS
+    "crates/analysis",
+    "crates/move-executor",
+    "crates/dialects",
+    "crates/utils",
+    "crates/integration_tests" # MLS
 ]
