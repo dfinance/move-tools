@@ -1,10 +1,10 @@
 [workspace]
 members = [
     "compat",
-    "crates/move-language-server", # MLS
-    "crates/analysis",
-    "crates/move-executor",
-    "crates/dialects",
-    "crates/utils",
-    "crates/integration_tests" # MLS
+    "move-language-server", # MLS
+    "analysis",
+    "move-executor",
+    "dialects",
+    "utils",
+    "integration_tests" # MLS
 ]
