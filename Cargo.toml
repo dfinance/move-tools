@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "libra",
     "compat",
     "crates/move-language-server", # MLS
     "crates/analysis",

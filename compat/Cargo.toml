@@ -6,8 +6,8 @@ edition = "2018"
 [dependencies]
 log = "0.4"
 anyhow = "1.0.31"
-libra = { path = "../libra" }
 hex = "*"
+libra = { package = "dfibra", git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
 
 [dev-dependencies]
 include_dir = "0.6"
