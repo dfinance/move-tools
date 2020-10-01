@@ -1,0 +1,37 @@
+[package]
+name = "libra"
+version = "0.1.0"
+publish = false
+edition = "2018"
+description = "Reshare used Move- & Libra- crates."
+
+[dependencies]
+
+[target.'cfg(not(wasm32))'.dependencies]
+bytecode-verifier = { package = "bytecode-verifier", git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+bytecode-source-map = { package = "bytecode-source-map", git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+ir-to-bytecode-syntax = { package = "ir-to-bytecode-syntax", git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+libra-types = { package = "libra-types", git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+libra-workspace-hack = { package = "libra-workspace-hack", git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+move-core-types = { package = "move-core-types", git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+move-ir-types = { package = "move-ir-types", git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+move-coverage = { package = "move-coverage", git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+vm = { package = "vm", git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+
+lcs = { git = "https://github.com/dfinance/libra.git", package = "libra-canonical-serialization", branch = "15.09.2020" }
+compiler = { git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+move-lang = { git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+move-vm-types = { git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+move-vm-runtime = { git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+move-vm-natives = { git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+libra-vm = { git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+libra-state-view = { git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+libra-logger = { git = "https://github.com/dfinance/libra.git", branch = "15.09.2020" }
+
+
+[target.'cfg(wasm32)'.dependencies]
+# TODO: support wasm target
+
+
+[features]
+default = []

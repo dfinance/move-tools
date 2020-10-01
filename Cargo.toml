@@ -1,9 +1,14 @@
 [workspace]
 members = [
-    "crates/move-language-server",
+    "libra",
+    "compat",
+    "crates/move-language-server", # MLS
     "crates/analysis",
     "crates/move-executor",
     "crates/dialects",
     "crates/utils",
-    "crates/integration_tests"
+    "crates/integration_tests", # MLS
+    # common utilities:
+    "common/git-hash",
+    "common/git-hash/macro",
 ]

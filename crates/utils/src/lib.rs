@@ -4,6 +4,7 @@ use std::path::Path;
 pub mod io;
 
 pub type MoveFilePath = &'static str;
+// TODO: use new-type instead of just tuple. Else then any (&str, String) is MoveFile.
 pub type MoveFile = (MoveFilePath, String);
 
 pub type FilesSourceText = HashMap<MoveFilePath, String>;
