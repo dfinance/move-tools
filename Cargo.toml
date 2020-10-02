@@ -6,5 +6,7 @@ members = [
     "move-executor",
     "dialects",
     "utils",
-    "integration_tests" # MLS
+    "integration_tests", # MLS
+    "movec",
+    "lang"
 ]
