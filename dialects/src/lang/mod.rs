@@ -16,7 +16,7 @@ use crate::shared::errors::{
     ProjectSourceMap,
 };
 use std::collections::BTreeMap;
-use utils::MoveFilePath;
+use crate::file::MoveFile;
 
 pub mod executor;
 pub mod explain;
@@ -95,7 +95,7 @@ pub fn replace_sender_placeholder(
     new_s
 }
 
-pub type ProgramCommentsMap = BTreeMap<MoveFilePath, (String, FileCommentMap)>;
+pub type ProgramCommentsMap = BTreeMap<&'static str, (MoveFile, FileCommentMap)>;
 pub type PreBytecodeProgram = cfgir::ast::Program;
 
 pub fn check_defs(

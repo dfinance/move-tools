@@ -1,21 +1,19 @@
 use std::path::PathBuf;
-use crate::{MoveFile, io, MoveFilePath, leaked_fpath};
 
-pub fn get_script_path() -> MoveFilePath {
-    leaked_fpath(get_modules_path().join("script.move"))
+pub fn get_script_path() -> String {
+    get_modules_path().join("script.move").to_str().unwrap().to_owned()
 }
 
 // just need some valid fname
-pub fn existing_module_file_abspath() -> MoveFilePath {
-    let abspath = std::env::current_dir()
+pub fn existing_module_file_abspath() -> String {
+    std::env::current_dir()
         .unwrap()
         .join("resources")
         .join("modules")
         .join("record.move")
         .into_os_string()
         .into_string()
-        .unwrap();
-    leaked_fpath(&abspath)
+        .unwrap()
 }
 
 pub fn get_test_resources_dir() -> PathBuf {
@@ -44,18 +42,18 @@ pub fn setup_test_logging() {
         .unwrap_or_default();
 }
 
-pub fn stdlib_mod(name: &str) -> MoveFile {
-    io::load_move_file(get_stdlib_path().join(name)).unwrap()
+pub fn stdlib_mod(name: &str) -> PathBuf {
+    get_stdlib_path().join(name)
 }
 
-pub fn modules_mod(name: &str) -> MoveFile {
-    io::load_move_file(get_modules_path().join(name)).unwrap()
+pub fn modules_mod(name: &str) -> PathBuf {
+    get_modules_path().join(name)
 }
 
-pub fn stdlib_transaction_mod() -> MoveFile {
-    stdlib_mod("Transaction.move")
+pub fn stdlib_transaction_mod() -> String {
+    stdlib_mod("Transaction.move").to_str().unwrap().to_owned()
 }
 
-pub fn record_mod() -> MoveFile {
-    io::load_move_file(get_modules_path().join("record.move")).unwrap()
+pub fn record_mod() -> String {
+    get_modules_path().join("record.move").to_str().unwrap().to_owned()
 }

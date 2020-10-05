@@ -1,6 +1,5 @@
 use anyhow::Result;
 
-use crate::base::Dialect;
 use crate::lang::gas::{dfinance_cost_table, libra_cost_table};
 use crate::shared::bech32::{bech32_into_libra, HRP};
 use crate::shared::errors::FileSourceMap;
@@ -9,6 +8,7 @@ use anyhow::Context;
 use libra_move_core_types::account_address::AccountAddress as LibraAccountAddress;
 use move_core_types::account_address::AccountAddress;
 use move_core_types::gas_schedule::CostTable;
+use crate::Dialect;
 
 #[derive(Default)]
 pub struct LibraDialect;

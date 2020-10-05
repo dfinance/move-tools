@@ -664,12 +664,14 @@ dependencies = [
  "libra-crypto 0.1.0 (git+https://github.com/dfinance/libra.git?branch=15.09.2020)",
  "libra-state-view",
  "libra-types",
+ "log",
  "move-core-types 0.1.0 (git+https://github.com/dfinance/libra.git?branch=15.09.2020)",
  "move-core-types 0.1.0 (git+https://github.com/dfinance/libra.git)",
  "move-ir-types",
  "move-lang",
  "move-vm-runtime",
  "move-vm-types",
+ "ra_vfs",
  "regex",
  "serde",
  "serde_derive",
@@ -677,6 +679,7 @@ dependencies = [
  "utils",
  "vm",
  "vm-genesis",
+ "walkdir",
 ]
 
 [[package]]
@@ -2244,6 +2247,7 @@ dependencies = [
  "dialects",
  "lang",
  "libra-types",
+ "move-lang",
  "serde",
  "serde_json",
  "utils",

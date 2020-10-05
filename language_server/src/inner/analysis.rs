@@ -1,6 +1,6 @@
-use utils::{io, MoveFile, MoveFilePath};
 use crate::inner::db::{RootDatabase, FileDiagnostic};
 use lang::compiler::check_with_compiler;
+use dialects::file::{read_move_files, MoveFile};
 
 #[derive(Debug)]
 pub struct Analysis {
@@ -18,7 +18,7 @@ impl Analysis {
 
     pub fn check_file_with_compiler(
         &self,
-        fpath: MoveFilePath,
+        fpath: &'static str,
         text: &str,
     ) -> Option<FileDiagnostic> {
         match self.check_file_with_compiler_inner(fpath, text) {
@@ -27,10 +27,9 @@ impl Analysis {
         }
     }
 
-    #[inline]
     fn check_file_with_compiler_inner(
         &self,
-        current_fpath: MoveFilePath,
+        current_fpath: &'static str,
         current_text: &str,
     ) -> Result<(), Vec<FileDiagnostic>> {
         let deps: Vec<MoveFile> = self
@@ -40,8 +39,8 @@ impl Analysis {
             .filter(|(fpath, _)| *fpath != current_fpath)
             .collect();
 
-        let current_file = (current_fpath, current_text.to_string());
-        check_with_compiler(self.db.config.dialect().as_ref(), current_file, deps, self.db.config.sender())
+        let current_file = MoveFile::new(current_fpath, current_text.to_string());
+        check_with_compiler(self.db.config.dialect().as_ref(), &current_file, deps, self.db.config.sender())
             .map_err(|errors| {
                 errors
                     .into_iter()
@@ -59,12 +58,12 @@ impl Analysis {
             })
     }
 
-    fn read_stdlib_files(&self) -> Vec<(MoveFilePath, String)> {
+    fn read_stdlib_files(&self) -> Vec<MoveFile> {
         self.db
             .config
             .stdlib_folder
             .as_ref()
-            .map(|folder| io::read_move_files(folder.as_path()))
+            .map(|folder| read_move_files(folder.as_path()))
             .unwrap_or_else(Vec::new)
     }
 }

@@ -1,16 +1,29 @@
 use anyhow::Result;
 
-use crate::base::Dialect;
 use crate::impls::{DFinanceDialect, LibraDialect};
 
 use serde::export::fmt::Debug;
 
 use std::str::FromStr;
+use crate::shared::ProvidedAccountAddress;
+use move_core_types::gas_schedule::CostTable;
+use crate::shared::errors::FileSourceMap;
 
-pub mod base;
 pub mod impls;
 pub mod lang;
 pub mod shared;
+pub mod file;
+
+pub trait Dialect {
+    fn name(&self) -> &str;
+
+    fn normalize_account_address(&self, addr: &str) -> Result<ProvidedAccountAddress>;
+
+    fn cost_table(&self) -> CostTable;
+
+    fn replace_addresses(&self, source_text: &str, source_map: &mut FileSourceMap) -> String;
+}
+
 
 #[derive(serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]

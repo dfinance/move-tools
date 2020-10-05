@@ -137,10 +137,10 @@ pub fn init_execution_session(
                 loc, script, key, ..
             } => {
                 let mut meta = ExecutionMeta::default();
-                if let Some((file_content, comments)) = program_doc_comments.get(loc.file()) {
+                if let Some((file, comments)) = program_doc_comments.get(loc.file()) {
                     let script_loc = script_loc_map.get(&key).unwrap().to_owned();
                     let doc_comments =
-                        extract_script_doc_comments(script_loc, file_content, comments);
+                        extract_script_doc_comments(script_loc, file.content(), comments);
                     for doc_comment in doc_comments {
                         meta.apply_meta_comment(doc_comment)
                     }

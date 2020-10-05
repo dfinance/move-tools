@@ -1,11 +1,12 @@
 use dialects::shared::errors::ExecCompilerError;
 use move_executor::compile_and_execute_script;
 
-use utils::leaked_fpath;
 use dialects::lang::explain::AddressResourceChanges;
 use utils::tests::{
     get_script_path, stdlib_mod, existing_module_file_abspath, modules_mod, get_modules_path,
 };
+use dialects::file::MoveFile;
+use move_lang::name_pool::ConstPool;
 
 #[test]
 fn test_show_compilation_errors() {
@@ -15,17 +16,18 @@ script {
         let _ = 0x0::Transaction::sender();
     }
 }";
+    let _pool = ConstPool::new();
     let errors = compile_and_execute_script(
-        (get_script_path(), text.to_string()),
+        &MoveFile::new(get_script_path(), text.to_string()),
         &[],
         "libra",
         "0x1111111111111111",
         vec![],
     )
-    .unwrap_err()
-    .downcast::<ExecCompilerError>()
-    .unwrap()
-    .0;
+        .unwrap_err()
+        .downcast::<ExecCompilerError>()
+        .unwrap()
+        .0;
     assert_eq!(errors.len(), 1);
     assert_eq!(
         errors[0].parts[0].message,
@@ -43,15 +45,17 @@ script {
         let _ = Signer::address_of(s);
     }
 }";
-    let deps = vec![stdlib_mod("signer.move")];
+    let _pool = ConstPool::new();
+
+    let deps = vec![MoveFile::from_path(&stdlib_mod("signer.move")).unwrap()];
     compile_and_execute_script(
-        (existing_module_file_abspath(), text.to_string()),
+        &MoveFile::new(existing_module_file_abspath(), text.to_string()),
         &deps,
         "libra",
         "0x1111111111111111",
         vec![],
     )
-    .unwrap();
+        .unwrap();
 }
 
 #[test]
@@ -65,17 +69,22 @@ script {
         Record::save(s, record);
     }
 }";
-    let deps = vec![stdlib_mod("signer.move"), modules_mod("record.move")];
+    let _pool = ConstPool::new();
+
+    let deps = vec![
+        MoveFile::from_path(&stdlib_mod("signer.move")).unwrap(),
+        MoveFile::from_path(&modules_mod("record.move")).unwrap()
+    ];
 
     let effects = compile_and_execute_script(
-        (get_script_path(), script_text.to_string()),
+        &MoveFile::new(get_script_path(), script_text.to_string()),
         &deps,
         "libra",
         "0x1111111111111111",
         vec![],
     )
-    .unwrap()
-    .effects;
+        .unwrap()
+        .effects;
     assert_eq!(effects.resources().len(), 1);
     assert_eq!(
         effects.resources()[0],
@@ -153,21 +162,23 @@ script {
     }
 }
         ";
+    let _pool = ConstPool::new();
+
     let mut deps = vec![];
-    deps.push((
-        leaked_fpath(get_modules_path().join("m.move")),
-        module_text.to_string(),
-    ));
+    deps.push(
+        MoveFile::new(get_modules_path().join("m.move").to_str().unwrap().to_string(),
+                      module_text.to_string(),
+        ));
 
     let effects = compile_and_execute_script(
-        (get_script_path(), script_text.to_string()),
+        &MoveFile::new(get_script_path(), script_text.to_string()),
         &deps,
         "libra",
         "0x1",
         vec![],
     )
-    .unwrap()
-    .effects;
+        .unwrap()
+        .effects;
     assert_eq!(effects.resources().len(), 1);
     assert_eq!(
         effects.resources()[0],
@@ -199,17 +210,18 @@ script {
     ";
 
     let effects = compile_and_execute_script(
-        (get_script_path(), script_text.to_string()),
-        &[(
-            leaked_fpath(get_modules_path().join("m.move")),
-            module_source_text.to_string(),
-        )],
+        &MoveFile::new(get_script_path(), script_text.to_string()),
+        &[
+            MoveFile::new(get_modules_path().join("m.move").to_str().unwrap().to_string(),
+                          module_source_text.to_string(),
+            )
+        ],
         "dfinance",
         "wallet1me0cdn52672y7feddy7tgcj6j4dkzq2su745vh",
         vec![],
     )
-    .unwrap()
-    .effects;
+        .unwrap()
+        .effects;
 
     assert_eq!(
         effects.resources()[0],
@@ -259,24 +271,24 @@ script {
     ";
 
     let effects = compile_and_execute_script(
-        (get_script_path(), script_text.to_string()),
-        &[(
-            leaked_fpath(get_modules_path().join("m.move")),
-            module_source_text.to_string(),
-        )],
+        &MoveFile::new(get_script_path(), script_text.to_string()),
+        &[
+            MoveFile::new(get_modules_path().join("m.move").to_str().unwrap().to_string(),
+                          module_source_text.to_string(),
+            )],
         "libra",
         "0x1",
         vec![String::from("true")],
     )
-    .unwrap()
-    .effects;
+        .unwrap()
+        .effects;
 
     assert_eq!(effects.resources().len(), 1);
     assert_eq!(
         effects.resources()[0],
         AddressResourceChanges::new(
             "0x0000000000000000000000000000000000000001",
-            vec!["Added type 00000000::Module::T: [true]".to_string()]
+            vec!["Added type 00000000::Module::T: [true]".to_string()],
         )
     );
 }
@@ -299,18 +311,20 @@ script {
     }
 }
         ";
+    let _pool = ConstPool::new();
+
     let effects = compile_and_execute_script(
-        (get_script_path(), source_text.to_string()),
-        &[(
-            leaked_fpath(get_modules_path().join("debug.move")),
-            module_text.to_string(),
-        )],
+        &MoveFile::new(get_script_path(), source_text.to_string()),
+        &[
+            MoveFile::new(get_modules_path().join("debug.move").to_str().unwrap().to_string(),
+                          module_text.to_string(),
+            )],
         "libra",
         "0x1",
         vec![],
     )
-    .unwrap()
-    .effects;
+        .unwrap()
+        .effects;
     assert_eq!(effects.resources().len(), 0);
 }
 
@@ -421,16 +435,18 @@ script {
     }
 }
         ";
+    let _pool = ConstPool::new();
+
     let exec_error = compile_and_execute_script(
-        (get_script_path(), text.to_string()),
+        &MoveFile::new(get_script_path(), text.to_string()),
         &[],
         "dfinance",
         "wallet1pxqfjvnu0utauj8fctw2s7j4mfyvrsjd59c2u8",
         vec![],
     )
-    .unwrap_err()
-    .downcast::<ExecCompilerError>()
-    .unwrap();
+        .unwrap_err()
+        .downcast::<ExecCompilerError>()
+        .unwrap();
 
     let errors = exec_error.transform_with_source_map();
     assert_eq!(errors.len(), 1);
@@ -497,15 +513,15 @@ script {
         let _ = Signer::address_of(s);
     }
 }";
-    let deps = vec![stdlib_mod("signer.move")];
+    let deps = vec![MoveFile::from_path(&stdlib_mod("signer.move")).unwrap()];
     let res = compile_and_execute_script(
-        (existing_module_file_abspath(), text.to_string()),
+        &MoveFile::new(existing_module_file_abspath(), text.to_string()),
         &deps,
         "libra",
         "0x1111111111111111",
         vec![],
     )
-    .unwrap();
+        .unwrap();
     assert_eq!(res.gas_spent, 7);
 }
 
@@ -515,24 +531,26 @@ fn test_dfinance_executor_allows_0x0() {
 script {
     fun main() {}
 }";
+    let _pool = ConstPool::new();
+
     compile_and_execute_script(
-        (existing_module_file_abspath(), text.to_string()),
+        &MoveFile::new(existing_module_file_abspath(), text.to_string()),
         &[],
         "dfinance",
         "0x0",
         // serde_json::json!([]),
         vec![],
     )
-    .unwrap();
+        .unwrap();
 
     compile_and_execute_script(
-        (existing_module_file_abspath(), text.to_string()),
+        &MoveFile::new(existing_module_file_abspath(), text.to_string()),
         &[],
         "dfinance",
         "0x1",
         vec![],
     )
-    .unwrap();
+        .unwrap();
 }
 
 #[test]
@@ -548,15 +566,17 @@ script {
     }
 }
     ";
+    let _pool = ConstPool::new();
+
     let effects = compile_and_execute_script(
-        (get_script_path(), text.to_string()),
-        &[stdlib_mod("signer.move"), modules_mod("record.move")],
+        &MoveFile::new(get_script_path(), text.to_string()),
+        &[MoveFile::from_path(&stdlib_mod("signer.move")).unwrap(), MoveFile::from_path(&modules_mod("record.move")).unwrap()],
         "dfinance",
         "0x3",
         vec![],
     )
-    .unwrap()
-    .effects;
+        .unwrap()
+        .effects;
     assert_eq!(effects.resources().len(), 1);
     assert_eq!(
         effects.resources()[0].address,
@@ -586,15 +606,17 @@ fn test_multiple_signers() {
     }
     ";
 
+    let _pool = ConstPool::new();
+
     let effects = compile_and_execute_script(
-        (get_script_path(), text.to_string()),
-        &[stdlib_mod("signer.move"), modules_mod("record.move")],
+        &MoveFile::new(get_script_path(), text.to_string()),
+        &[MoveFile::from_path(&stdlib_mod("signer.move")).unwrap(), MoveFile::from_path(&modules_mod("record.move")).unwrap()],
         "dfinance",
         "0x3",
         vec![],
     )
-    .unwrap()
-    .effects;
+        .unwrap()
+        .effects;
     let account1_change = &effects.resources()[0];
     assert_eq!(
         account1_change.address,
@@ -645,15 +667,17 @@ script {
     }
 }
     ";
+    let _pool = ConstPool::new();
+
     let effects = compile_and_execute_script(
-        (get_script_path(), text.to_string()),
+        &MoveFile::new(get_script_path(), text.to_string()),
         &[],
         "dfinance",
         "0x3",
         vec![],
     )
-    .unwrap()
-    .effects;
+        .unwrap()
+        .effects;
     assert_eq!(effects.resources().len(), 1);
 
     let account1_change = &effects.resources()[0];
@@ -676,14 +700,16 @@ script {
     }
 }
     ";
+    let _pool = ConstPool::new();
+
     let res = compile_and_execute_script(
-        (get_script_path(), text.to_string()),
+        &MoveFile::new(get_script_path(), text.to_string()),
         &[],
         "dfinance",
         "0x3",
         vec![],
     )
-    .unwrap_err();
+        .unwrap_err();
     assert_eq!(
         res.source().unwrap().to_string(),
         "Execution aborted with code 1 in transaction script\n"

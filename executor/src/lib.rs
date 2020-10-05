@@ -1,19 +1,18 @@
 use anyhow::{Context, Result};
 
-use dialects::DialectName;
+use dialects::{DialectName, Dialect};
 
 use std::str::FromStr;
-use utils::MoveFile;
 use dialects::shared::{AddressMap, ProvidedAccountAddress};
 use dialects::lang::executor::{ExecutionResult, FakeRemoteCache, convert_txn_arg, execute_script};
 use dialects::lang::session::init_execution_session;
 use dialects::lang::into_exec_compiler_error;
 use libra_types::transaction::parse_transaction_argument;
-use dialects::base::Dialect;
 use lang::compiler::compile_to_prebytecode_program;
+use dialects::file::MoveFile;
 
 pub fn compile_and_execute_script(
-    script: MoveFile,
+    script: &MoveFile,
     deps: &[MoveFile],
     dialect: &str,
     sender: &str,
@@ -66,7 +65,7 @@ pub fn compile_and_execute_script(
 
 fn compile_and_run(
     dialect: &dyn Dialect,
-    script_file: MoveFile,
+    script_file: &MoveFile,
     deps: &[MoveFile],
     provided_sender: ProvidedAccountAddress,
     args: Vec<String>,

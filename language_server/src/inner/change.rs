@@ -1,13 +1,12 @@
 use core::fmt;
 use serde::export::Formatter;
 use std::cmp::min;
-use utils::MoveFilePath;
 use crate::inner::config::Config;
 
 pub enum RootChange {
-    AddFile(MoveFilePath, String),
-    ChangeFile(MoveFilePath, String),
-    RemoveFile(MoveFilePath),
+    AddFile(&'static str, String),
+    ChangeFile(&'static str, String),
+    RemoveFile(&'static str),
 }
 
 impl fmt::Debug for RootChange {
@@ -41,17 +40,17 @@ impl AnalysisChange {
         AnalysisChange::default()
     }
 
-    pub fn add_file(&mut self, fname: MoveFilePath, text: String) {
+    pub fn add_file(&mut self, fname: &'static str, text: String) {
         self.tracked_files_changed
             .push(RootChange::AddFile(fname, text));
     }
 
-    pub fn update_file(&mut self, fname: MoveFilePath, text: String) {
+    pub fn update_file(&mut self, fname: &'static str, text: String) {
         self.tracked_files_changed
             .push(RootChange::ChangeFile(fname, text));
     }
 
-    pub fn remove_file(&mut self, fname: MoveFilePath) {
+    pub fn remove_file(&mut self, fname: &'static str) {
         self.tracked_files_changed
             .push(RootChange::RemoveFile(fname))
     }

@@ -23,10 +23,10 @@ use crate::global_state::{initialize_new_global_state, GlobalState};
 
 use crate::subscriptions::OpenedFiles;
 use std::collections::HashSet;
-use utils::{leaked_fpath, MoveFile, MoveFilePath};
 use crate::inner::db::FileDiagnostic;
 use crate::inner::config::Config;
 use crate::inner::analysis::Analysis;
+use dialects::file::MoveFile;
 
 #[derive(Debug)]
 pub struct LspError {
@@ -63,7 +63,7 @@ pub enum ResponseEvent {
 #[derive(Debug)]
 pub enum FileSystemEvent {
     AddFile(MoveFile),
-    RemoveFile(MoveFilePath),
+    RemoveFile(&'static str),
     ChangeFile(MoveFile),
 }
 

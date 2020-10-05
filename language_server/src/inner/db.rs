@@ -5,13 +5,13 @@ use dialects::shared::errors::{CompilerError, CompilerErrorPart};
 use serde::export::fmt::Debug;
 use serde::export::Formatter;
 use std::fmt;
-use utils::{FilesSourceText, MoveFilePath};
 use utils::location::File;
 use crate::inner::config::Config;
 use crate::inner::change::{AnalysisChange, RootChange};
+use lang::compiler::FilesSourceText;
 
 pub struct FileDiagnostic {
-    pub fpath: MoveFilePath,
+    pub fpath: &'static str,
     pub diagnostic: Option<Diagnostic>,
 }
 
@@ -40,14 +40,14 @@ impl Debug for FileDiagnostic {
 }
 
 impl FileDiagnostic {
-    pub fn new(fpath: MoveFilePath, diagnostic: Diagnostic) -> FileDiagnostic {
+    pub fn new(fpath: &'static str, diagnostic: Diagnostic) -> FileDiagnostic {
         FileDiagnostic {
             fpath,
             diagnostic: Some(diagnostic),
         }
     }
 
-    pub fn new_empty(fpath: MoveFilePath) -> FileDiagnostic {
+    pub fn new_empty(fpath: &'static str) -> FileDiagnostic {
         FileDiagnostic {
             fpath,
             diagnostic: None,
@@ -56,7 +56,7 @@ impl FileDiagnostic {
 }
 
 pub struct FilePosition {
-    pub fpath: MoveFilePath,
+    pub fpath: &'static str,
     pub pos: (usize, usize),
 }
 
@@ -154,7 +154,7 @@ impl RootDatabase {
         Ok(FileDiagnostic::new(prim_location.fpath, diagnostic))
     }
 
-    fn is_fpath_for_a_module(&self, fpath: MoveFilePath) -> bool {
+    fn is_fpath_for_a_module(&self, fpath: &'static str) -> bool {
         for module_folder in self.config.modules_folders.iter() {
             if fpath.starts_with(module_folder.to_str().unwrap()) {
                 return true;

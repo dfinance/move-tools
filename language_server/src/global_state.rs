@@ -1,9 +1,9 @@
 use crate::main_loop::FileSystemEvent;
-use utils::io;
 use crate::inner::config::Config;
 use crate::inner::analysis::Analysis;
 use crate::inner::db::RootDatabase;
 use crate::inner::change::AnalysisChange;
+use dialects::file::load_move_files;
 
 pub struct GlobalStateSnapshot {
     pub config: Config,
@@ -67,13 +67,13 @@ pub fn initialize_new_global_state(config: Config) -> GlobalState {
     let mut initial_fs_events = vec![];
     match &config.stdlib_folder {
         Some(folder) => {
-            for file in io::load_move_files(vec![folder.clone()]).unwrap() {
+            for file in load_move_files(vec![folder.clone()]).unwrap() {
                 initial_fs_events.push(FileSystemEvent::AddFile(file));
             }
         }
         None => {}
     }
-    for file in io::load_move_files(config.modules_folders.clone()).unwrap() {
+    for file in load_move_files(config.modules_folders.clone()).unwrap() {
         initial_fs_events.push(FileSystemEvent::AddFile(file));
     }
     GlobalState::new(config, initial_fs_events)

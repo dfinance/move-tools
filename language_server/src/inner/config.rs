@@ -2,13 +2,13 @@ use std::path::PathBuf;
 
 use core::fmt;
 
-use dialects::base::Dialect;
+use dialects::Dialect;
 use dialects::shared::ProvidedAccountAddress;
 use dialects::DialectName;
 use serde::export::fmt::Debug;
 use serde::export::Formatter;
 use serde::Deserialize;
-use utils::io;
+use dialects::file::iter_over_move_files;
 
 #[derive(Clone)]
 pub struct Config {
@@ -48,7 +48,7 @@ impl Config {
         let stdlib_modules = self
             .stdlib_folder
             .as_ref()
-            .map(io::iter_over_move_files)
+            .map(iter_over_move_files)
             .unwrap_or_else(Vec::new);
         log::info!(
             "available stdlib modules (from {:?}) = {:#?}",
@@ -57,7 +57,7 @@ impl Config {
         );
 
         for folder in &self.modules_folders {
-            let files = io::iter_over_move_files(folder);
+            let files = iter_over_move_files(folder);
             log::info!("third party modules (from {:?}) = {:#?}", folder, files);
         }
     }
