@@ -4,22 +4,22 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 
 use clap::{App, Arg};
-use dialects::shared::errors::ExecCompilerError;
-
 use move_executor::compile_and_run_scripts_in_file;
 use move_executor::explain::{PipelineExecutionResult, StepExecutionResult};
-use utils::{io, leaked_fpath, FilesSourceText, MoveFilePath};
-use lang::compiler::print_compiler_errors_and_exit;
+use utils::{leaked_fpath, MoveFilePath};
+use lang::compiler::errors::{ExecCompilerError, report_errors};
+use move_lang::errors::FilesSourceText;
+use lang::file;
+use lang::file::MvFile;
+use move_lang::name_pool::ConstPool;
 
-fn get_files_for_error_reporting(
-    script: (MoveFilePath, String),
-    deps: Vec<(MoveFilePath, String)>,
-) -> FilesSourceText {
-    let mut mapping = FilesSourceText::with_capacity(deps.len() + 1);
-    for (fpath, text) in vec![script].into_iter().chain(deps.into_iter()) {
-        mapping.insert(fpath, text);
-    }
-    mapping
+fn get_files_for_error_reporting(script: MvFile, deps: Vec<MvFile>) -> FilesSourceText {
+    // let mut mapping = FilesSourceText::with_capacity(deps.len() + 1);
+    // for (fpath, text) in vec![script].into_iter().chain(deps.into_iter()) {
+    //     mapping.insert(fpath, text);
+    // }
+    // mapping
+    todo!()
 }
 
 fn main() -> Result<()> {
@@ -55,16 +55,14 @@ fn main() -> Result<()> {
         )
         .get_matches();
 
-    let script_fpath = leaked_fpath(cli_arguments.value_of("SCRIPT").unwrap());
-    let script_source_text = fs::read_to_string(script_fpath)
-        .with_context(|| format!("Cannot open {:?}", script_fpath))?;
-
+    let _pool = ConstPool::new();
+    let script = MvFile::with_path(cli_arguments.value_of("SCRIPT").unwrap().to_owned())?;
     let modules_fpaths = cli_arguments
         .values_of("modules")
         .unwrap_or_default()
         .map(|path| path.into())
         .collect::<Vec<PathBuf>>();
-    let deps = io::load_move_files(modules_fpaths)?;
+    let deps = file::load_move_files(modules_fpaths.as_slice())?;
 
     let show_network_effects = cli_arguments.is_present("show-changes");
     let show_events = cli_arguments.is_present("show-events");
@@ -78,13 +76,8 @@ fn main() -> Result<()> {
         .map(String::from)
         .collect();
 
-    let res = compile_and_run_scripts_in_file(
-        (script_fpath, script_source_text.clone()),
-        &deps,
-        dialect,
-        sender,
-        args,
-    );
+    let res = compile_and_run_scripts_in_file(&script, &deps, dialect, sender, args);
+
     match res {
         Ok(exec_result) => {
             let PipelineExecutionResult {
@@ -118,10 +111,9 @@ fn main() -> Result<()> {
         Err(error) => {
             let error = match error.downcast::<ExecCompilerError>() {
                 Ok(compiler_error) => {
-                    let files_mapping =
-                        get_files_for_error_reporting((script_fpath, script_source_text), deps);
+                    let files_mapping = get_files_for_error_reporting(script, deps);
                     let transformed_errors = compiler_error.transform_with_source_map();
-                    print_compiler_errors_and_exit(files_mapping, transformed_errors);
+                    report_errors(files_mapping, transformed_errors);
                 }
                 Err(error) => error,
             };

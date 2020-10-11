@@ -609,30 +609,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dialects"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bech32",
- "codespan 0.8.0",
- "hex",
- "lazy_static",
- "libra-canonical-serialization 0.1.0 (git+https://github.com/dfinance/libra.git?branch=15.09.2020)",
- "move-core-types 0.1.0 (git+https://github.com/dfinance/libra.git?branch=15.09.2020)",
- "move-core-types 0.1.0 (git+https://github.com/dfinance/libra.git)",
- "move-ir-types",
- "move-lang",
- "move-vm-types",
- "regex",
- "serde",
- "serde_derive",
- "serde_json",
- "utils",
- "vm",
- "vm-genesis",
-]
-
-[[package]]
 name = "difference"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1422,17 +1398,30 @@ name = "lang"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bech32",
+ "codespan 0.8.0",
  "dfibra",
- "dialects",
  "env_logger",
  "hex",
  "include_dir",
  "itertools",
+ "lazy_static",
+ "libra-canonical-serialization 0.1.0 (git+https://github.com/dfinance/libra.git?branch=15.09.2020)",
  "log",
  "move-core-types 0.1.0 (git+https://github.com/dfinance/libra.git?branch=15.09.2020)",
+ "move-core-types 0.1.0 (git+https://github.com/dfinance/libra.git)",
+ "move-ir-types",
  "move-lang",
+ "move-vm-types",
  "rand",
+ "regex",
+ "serde",
+ "serde_derive",
+ "serde_json",
  "utils",
+ "vm",
+ "vm-genesis",
+ "walkdir",
 ]
 
 [[package]]
@@ -2149,7 +2138,6 @@ dependencies = [
  "anyhow",
  "clap",
  "compiled-stdlib",
- "dialects",
  "errmapgen",
  "lang",
  "libra-canonical-serialization 0.1.0 (git+https://github.com/dfinance/libra.git?branch=15.09.2020)",
@@ -2220,7 +2208,6 @@ dependencies = [
  "codespan-reporting 0.8.0",
  "codespan-reporting 0.9.5",
  "crossbeam-channel",
- "dialects",
  "env_logger",
  "hex",
  "lang",
@@ -2334,7 +2321,6 @@ dependencies = [
  "anyhow",
  "bech32",
  "dfibra",
- "dialects",
  "hex",
  "http",
  "itertools",

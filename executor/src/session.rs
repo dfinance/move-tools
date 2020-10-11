@@ -9,14 +9,14 @@ use vm::CompiledModule;
 
 use std::collections::BTreeMap;
 use utils::location;
-use dialects::lang::{PreBytecodeProgram, ProgramCommentsMap};
-use dialects::shared::ProvidedAccountAddress;
 use move_ir_types::location::Loc;
 use move_core_types::parser::parse_transaction_argument;
 use move_core_types::transaction_argument::TransactionArgument;
 use move_vm_types::values::Value;
 use crate::oracles::oracle_metadata;
 use move_core_types::language_storage::StructTag;
+use lang::compiler::address::ProvidedAccountAddress;
+use lang::compiler::{ProgramCommentsMap, PreBytecodeProgram};
 
 fn split_around<'s>(s: &'s str, p: &str) -> (&'s str, &'s str) {
     let parts: Vec<_> = s.splitn(2, p).collect();
