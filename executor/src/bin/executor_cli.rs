@@ -24,7 +24,7 @@ fn get_files_for_error_reporting(script: MvFile, deps: Vec<MvFile>) -> FilesSour
 
 fn main() -> Result<()> {
     let cli_arguments = App::new("Move Executor")
-        .version("0.1.0")
+        .version(git_hash::crate_version_with_git_hash_short!())
         .arg(
             Arg::with_name("SCRIPT")
                 .required(true)
