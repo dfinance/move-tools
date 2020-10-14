@@ -2332,6 +2332,7 @@ dependencies = [
  "anyhow",
  "bech32",
  "dfibra",
+ "git-hash",
  "hex",
  "http",
  "itertools",
