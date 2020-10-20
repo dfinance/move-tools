@@ -80,9 +80,6 @@ jobs:
     - name: Test
       run: cargo test --all --no-fail-fast
 
-      # - name: Build
-    #   run: cargo build --all
-
     - name: Run clippy
       run: cargo clippy --tests --examples -- -Dwarnings
 
