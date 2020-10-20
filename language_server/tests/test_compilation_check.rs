@@ -1,8 +1,7 @@
 use std::borrow::Cow;
+use crossbeam_channel::unbounded;
 
 use lsp_types::{Diagnostic, Position, Range};
-
-use crossbeam_channel::unbounded;
 use move_language_server::main_loop::{compute_file_diagnostics, FileSystemEvent, ResponseEvent};
 use move_language_server::inner::config::Config;
 use move_language_server::inner::db::FileDiagnostic;
