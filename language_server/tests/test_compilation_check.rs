@@ -265,7 +265,7 @@ script {
     fn test_compile_check_module_from_a_folder_with_folder_provided_as_dependencies() {
         let _pool = ConstPool::new();
 
-        let record = MoveFile::load(asset("modules/record.move")).unwrap();
+        let record = MoveFile::load(modules_path().join("record.move")).unwrap();
         let config = config!({
             "stdlib_folder": stdlib_path(),
             "modules_folders": [modules_path()],
