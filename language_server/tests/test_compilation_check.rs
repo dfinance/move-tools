@@ -29,21 +29,12 @@ fn path(name: &str) -> String {
     modules_path().join(name).to_str().unwrap().to_owned()
 }
 
-// fn script_path() -> String {
-//     PathBuf::from("/resources/script.move")
-//         .to_str()
-//         .unwrap()
-//         .to_owned()
-// }
 fn script_path<'a>() -> impl Into<Cow<'a, str>> {
     resources_dir()
         .join("script.move")
         .to_string_lossy()
         .to_string()
 }
-// fn script_path() -> &'static str {
-//     "/resources/script.move"
-// }
 
 fn range(start: (u64, u64), end: (u64, u64)) -> Range {
     Range::new(Position::new(start.0, start.1), Position::new(end.0, end.1))
