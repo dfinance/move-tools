@@ -4,7 +4,7 @@ use crossbeam_channel::unbounded;
 use move_language_server::main_loop::{compute_file_diagnostics, FileSystemEvent, ResponseEvent};
 use move_language_server::inner::config::Config;
 use move_language_server::inner::db::FileDiagnostic;
-use resources::{asset, modules_path, stdlib_path};
+use resources::{modules_path, stdlib_path};
 use move_language_server::global_state::{
     GlobalState, GlobalStateSnapshot, initialize_new_global_state,
 };
