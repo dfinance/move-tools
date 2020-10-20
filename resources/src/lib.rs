@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 pub fn asset(str: &str) -> PathBuf {
-    assets_dir().join(str)
+    assets_dir().join(PathBuf::from(str))
 }
 
 pub fn modules_path() -> PathBuf {
