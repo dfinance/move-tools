@@ -1,10 +1,12 @@
+use std::borrow::Cow;
+
 use lsp_types::{Diagnostic, Position, Range};
 
 use crossbeam_channel::unbounded;
 use move_language_server::main_loop::{compute_file_diagnostics, FileSystemEvent, ResponseEvent};
 use move_language_server::inner::config::Config;
 use move_language_server::inner::db::FileDiagnostic;
-use resources::{modules_path, stdlib_path};
+use resources::{modules_path, resources_dir, stdlib_path};
 use move_language_server::global_state::{
     GlobalState, GlobalStateSnapshot, initialize_new_global_state,
 };
@@ -27,9 +29,21 @@ fn path(name: &str) -> String {
     modules_path().join(name).to_str().unwrap().to_owned()
 }
 
-fn script_path() -> &'static str {
-    "/resources/script.move"
+// fn script_path() -> String {
+//     PathBuf::from("/resources/script.move")
+//         .to_str()
+//         .unwrap()
+//         .to_owned()
+// }
+fn script_path<'a>() -> impl Into<Cow<'a, str>> {
+    resources_dir()
+        .join("script.move")
+        .to_string_lossy()
+        .to_string()
 }
+// fn script_path() -> &'static str {
+//     "/resources/script.move"
+// }
 
 fn range(start: (u64, u64), end: (u64, u64)) -> Range {
     Range::new(Position::new(start.0, start.1), Position::new(end.0, end.1))

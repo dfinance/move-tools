@@ -13,10 +13,13 @@ pub fn stdlib_path() -> PathBuf {
 }
 
 pub fn assets_dir() -> PathBuf {
+    resources_dir().join("assets")
+}
+
+pub fn resources_dir() -> PathBuf {
     std::env::current_dir()
         .unwrap()
         .parent()
         .unwrap()
         .join("resources")
-        .join("assets")
 }
