@@ -35,6 +35,9 @@ jobs:
 
     - if: matrix.os == 'windows-latest'
       run: PWD
+    - if: matrix.os == 'windows-latest'
+      run: which rustc
+
     # We need to disable the existing toolchain to avoid updating rust-docs
     # which takes a long time. The fastest way to do this is to rename the
     # existing folder, as deleting it takes about as much time as not doing
