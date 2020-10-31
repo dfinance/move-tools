@@ -5,15 +5,12 @@ use crate::{Config, disasm_str};
 const VERSION: &str = git_hash::crate_version_with_git_hash_short!();
 
 #[wasm_bindgen]
-pub extern "C" fn version() -> JsValue {
+pub fn version() -> JsValue {
     JsValue::from_str(VERSION)
 }
 
 #[wasm_bindgen]
-pub extern "C" fn disassemble(
-    bytes: &[u8],
-    compat_mode: bool,
-) -> Result<Option<String>, JsValue> {
+pub fn disassemble(bytes: &[u8], compat_mode: bool) -> Result<Option<String>, JsValue> {
     let mut bytes = bytes.to_owned();
 
     if compat_mode {
