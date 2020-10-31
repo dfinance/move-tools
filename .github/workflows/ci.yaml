@@ -127,8 +127,8 @@ jobs:
           target: wasm32-unknown-unknown
           override: true
 
-      - name: Build ${{ runner.crate }}
-        run: cargo build -p ${{ runner.crate }} --lib --target wasm32-unknown-unknown --release
+      - name: Build ${{ matrix.crate }}
+        run: cargo build -p ${{ matrix.crate }} --lib --target wasm32-unknown-unknown --release
 
       # - name: Install wasm-bindgen tool
       #   continue-on-error: true
@@ -139,7 +139,7 @@ jobs:
           version: "latest"
 
       - name: Gen JS/TS API
-        run: wasm-bindgen target/wasm32-unknown-unknown/release/${{ runner.crate }}.wasm --out-dir ./dist_${{ runner.crate }} --no-modules --no-modules-global ${{ runner.crate }}
+        run: wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm --out-dir ./dist_${{ matrix.crate }} --no-modules --no-modules-global ${{ matrix.crate }}
 
       # - name: Install wasm-pack toolchain
       #   run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
