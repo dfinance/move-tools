@@ -24,7 +24,7 @@ jobs:
 
     env:
       RUSTFLAGS: -D warnings
-      CARGO_INCREMENTAL: 0
+      CARGO_INCREMENTAL: 1
       RUSTUP_MAX_RETRIES: 10
       CARGO_NET_RETRY: 10
 
@@ -82,7 +82,7 @@ jobs:
       - name: Run clippy
         run: cargo clippy --tests --examples -- -Dwarnings
 
-  rust:
+  audit:
     name: Audit
     runs-on: ubuntu-latest
 
@@ -94,3 +94,58 @@ jobs:
         uses: actions-rs/audit-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+  wasm:
+    name: Wasm
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        crate:
+          - disassembler
+
+    env:
+      RUSTFLAGS: -D warnings
+      CARGO_INCREMENTAL: 1
+      RUSTUP_MAX_RETRIES: 10
+      CARGO_NET_RETRY: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: Build ${{ runner.crate }}
+        run: cargo build -p ${{ runner.crate }} --lib --target wasm32-unknown-unknown --release
+
+      # - name: Install wasm-bindgen tool
+      #   continue-on-error: true
+      #   run: cargo install wasm-bindgen-cli
+
+      - uses: jetli/wasm-bindgen-action@v0.1.0
+        with:
+          version: "latest"
+
+      - name: Gen JS/TS API
+        run: wasm-bindgen target/wasm32-unknown-unknown/release/${{ runner.crate }}.wasm --out-dir ./dist_${{ runner.crate }} --no-modules --no-modules-global ${{ runner.crate }}
+
+      # - name: Install wasm-pack toolchain
+      #   run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      # - name: Test in Chrome
+      #   run: wasm-pack test --headless --chrome
+      # - name: Test in Firefox
+      #   run: wasm-pack test --headless --firefox
+      # - name: Test in Safari
+      #   run: wasm-pack test --headless --safari
