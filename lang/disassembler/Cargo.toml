@@ -11,16 +11,11 @@ crate-type = [ "cdylib", "rlib" ]
 
 [[bin]]
 name = "disassembler"
-# path = "src/cli.rs"
-# required-features = [ "cli" ]
 
-# [features]
-# cli = [
-#     "anyhow/std", "anyhow/default",
-#     "rand", "hex", "itertools",
-# ]
+[features]
+cffi = []
 
-# lib & wasm:
+# lib, wasm, cffi:
 [dependencies]
 rand = "0.7"
 itertools = "0.9"
@@ -40,10 +35,6 @@ anyhow = "1.0"
 
 [target.wasm32-unknown-unknown.dependencies]
 wasm-bindgen = "0.2.68"
-
-# [target.wasm32-unknown-unknown.build-dependencies]
-# TODO: use wasm-pack
-# wasm-bindgen-cli = "0.2.68"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 lang = { path = ".." }

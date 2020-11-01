@@ -5,10 +5,9 @@ use std::path::PathBuf;
 use std::io::Write;
 use anyhow::Error;
 use clap::Clap;
-use git_hash::crate_version_with_git_hash_short as version;
 
 #[derive(Clap, Debug)]
-#[clap(name = "Move decompiler", version = version!())]
+#[clap(name = "Move decompiler", version = disassembler::VERSION)]
 struct Opt {
     #[clap(about = "Path to input file", long, short)]
     /// Path to compiled Move binary

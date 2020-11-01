@@ -29,8 +29,16 @@ pub mod unit;
 
 mod libra;
 
-#[cfg(target_arch = "wasm32")]
-mod wasm;
+pub mod ext {
+    #[cfg(all(target_arch = "wasm32", feature = "cffi"))]
+    compile_error!("Target 'wasm32' is incompatible with feature 'cffi'.");
+    #[cfg(feature = "cffi")]
+    pub mod cffi;
+    #[cfg(target_arch = "wasm32")]
+    pub mod wasm;
+}
+
+pub const VERSION: &str = git_hash::crate_version_with_git_hash_short!();
 
 /// Code indent.
 pub const INDENT: usize = 4;
