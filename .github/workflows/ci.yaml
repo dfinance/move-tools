@@ -134,14 +134,16 @@ jobs:
 
       # - name: Install wasm-bindgen tool
       #   continue-on-error: true
-      #   run: cargo install wasm-bindgen-cli
+      #   run: cargo install wasm-bindgen-cli or use wasm-pack
 
       - uses: jetli/wasm-bindgen-action@v0.1.0
         with:
           version: "0.2.68"
 
       - name: Gen JS/TS API
-        run: wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm --out-dir ./dist_${{ matrix.crate }} --no-modules --no-modules-global ${{ matrix.crate }}
+        run: |
+          wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm --out-dir ./dist_${{ matrix.crate }} --no-modules --no-modules-global ${{ matrix.crate }}
+          wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm --out-dir ./dist_${{ matrix.crate }}/js-modules
 
       # - name: Install wasm-pack toolchain
       #   run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
