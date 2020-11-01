@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 use std::rc::Rc;
 use crate::libra::prelude::*;
-// use move_core_types::account_address::AccountAddress;
 use crate::Encode;
 use anyhow::Error;
 use std::fmt::Write;

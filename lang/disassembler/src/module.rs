@@ -2,8 +2,6 @@ use crate::structs::StructDef;
 use anyhow::Error;
 use crate::{Encode, INDENT, Config};
 use crate::libra::prelude::*;
-// use move_core_types::account_address::AccountAddress;
-// use libra_types::account_address::AccountAddress;
 use std::fmt::Write;
 use crate::generics::Generics;
 use crate::imports::Imports;
