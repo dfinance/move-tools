@@ -6,7 +6,7 @@
 //!
 //! C-bindings for this can be generated with cbindgen.
 //! - `cargo install cbindgen`
-//! - `cbindgen -l=c --crate=disassembler -o ./dist/move-disassembler.h ./src/ext/cffi.rs`
+//! - `cbindgen -l=c --crate=disassembler -o ./include/move-disassembler.h ./src/ext/cffi.rs`
 //!
 //! ```c
 //! #include <stdio.h>
