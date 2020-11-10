@@ -97,8 +97,6 @@ jobs:
       - name: Archive
         id: archive
         run: |
-          mv ./target/release/executor_cli$OS_BIN_EXT ./target/release/move-executor$OS_BIN_EXT
-          mv ./target/release/disassembler$OS_BIN_EXT ./target/release/move-disassembler$OS_BIN_EXT
           MLS_NAME=move-language-server-${{ steps.mls.outputs.version }}-${{ matrix.platform }}
           MOVEC_NAME=movec-${{ steps.movec.outputs.version }}-${{ matrix.platform }}
           EXECUTOR_NAME=executor-${{ steps.executor.outputs.version }}-${{ matrix.platform }}
