@@ -115,7 +115,7 @@ jobs:
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
           asset_path: ./${{ steps.archive.outputs.tarball }}
-          asset_name: ${{ steps.archive.outputs.tarball }}
+          asset_name: move-${{ steps.archive.outputs.tarball }}
           asset_content_type: application/gzip
 
   cffi:
