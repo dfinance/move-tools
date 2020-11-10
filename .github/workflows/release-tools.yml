@@ -91,22 +91,31 @@ jobs:
       - name: rename some executables
         id: artifact
         run: |
-          MLS_NAME=move-language-server-${{ steps.mls.outputs.version }}-${{ matrix.platform }}$OS_BIN_EXT
-          MOVEC_NAME=movec-${{ steps.movec.outputs.version }}-${{ matrix.platform }}$OS_BIN_EXT
-          EXECUTOR_NAME=move-executor-${{ steps.executor.outputs.version }}-${{ matrix.platform }}$OS_BIN_EXT
-          TESTRUNNER_NAME=move-testrunner-${{ steps.executor.outputs.version }}-${{ matrix.platform }}$OS_BIN_EXT
-          DISASSEMBLER_NAME=move-disassembler-${{ steps.disassembler.outputs.version }}-${{ matrix.platform }}$OS_BIN_EXT
-          cd ./target/release
+          ARCH="$(uname -m)"
+          RELEASE_DIR=./target/release
+          MLS_NAME=move-language-server-${{ steps.mls.outputs.version }}-${{ matrix.platform }}-$ARCH$OS_BIN_EXT
+          MOVEC_NAME=movec-${{ steps.movec.outputs.version }}-${{ matrix.platform }}-$ARCH$OS_BIN_EXT
+          EXECUTOR_NAME=move-executor-${{ steps.executor.outputs.version }}-${{ matrix.platform }}-$ARCH$OS_BIN_EXT
+          TESTRUNNER_NAME=move-testrunner-${{ steps.executor.outputs.version }}-${{ matrix.platform }}-$ARCH$OS_BIN_EXT
+          DISASSEMBLER_NAME=move-disassembler-${{ steps.disassembler.outputs.version }}-${{ matrix.platform }}-$ARCH$OS_BIN_EXT
+          cd $RELEASE_DIR
+          ls
           mv executor_cli$OS_BIN_EXT $EXECUTOR_NAME
           mv testrunner$OS_BIN_EXT $TESTRUNNER_NAME
           mv disassembler$OS_BIN_EXT $DISASSEMBLER_NAME
           mv move-language-server$OS_BIN_EXT $MLS_NAME
           mv movec$OS_BIN_EXT $MOVEC_NAME
-          echo "::set-output name=mls::$PWD/$MLS_NAME"
-          echo "::set-output name=movec::$PWD/$MOVEC_NAME"
-          echo "::set-output name=executor::$PWD/$EXECUTOR_NAME"
-          echo "::set-output name=testrunner::$PWD/$TESTRUNNER_NAME"
-          echo "::set-output name=disassembler::$PWD/$DISASSEMBLER_NAME"
+          ls
+          echo "::set-output name=mls::$MLS_NAME"
+          echo "::set-output name=movec::$MOVEC_NAME"
+          echo "::set-output name=executor::$EXECUTOR_NAME"
+          echo "::set-output name=testrunner::$TESTRUNNER_NAME"
+          echo "::set-output name=disassembler::$DISASSEMBLER_NAME"
+          echo "::set-output name=mls_path::$RELEASE_DIR/$MLS_NAME"
+          echo "::set-output name=movec_path::$RELEASE_DIR/$MOVEC_NAME"
+          echo "::set-output name=executor_path::$RELEASE_DIR/$EXECUTOR_NAME"
+          echo "::set-output name=testrunner_path::$RELEASE_DIR/$TESTRUNNER_NAME"
+          echo "::set-output name=disassembler_path::$RELEASE_DIR/$DISASSEMBLER_NAME"
 
       - name: Upload MLS
         uses: actions/upload-release-asset@v1
@@ -114,7 +123,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ${{ steps.artifact.outputs.mls }}
+          asset_path: ${{ steps.artifact.outputs.mls_path }}
           asset_name: ${{ steps.artifact.outputs.mls }}
           asset_content_type: application/gzip
 
@@ -124,7 +133,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ${{ steps.artifact.outputs.movec }}
+          asset_path: ${{ steps.artifact.outputs.movec_path }}
           asset_name: ${{ steps.artifact.outputs.movec }}
           asset_content_type: application/gzip
 
@@ -134,7 +143,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ${{ steps.artifact.outputs.executor }}
+          asset_path: ${{ steps.artifact.outputs.executor_path }}
           asset_name: ${{ steps.artifact.outputs.executor }}
           asset_content_type: application/gzip
 
@@ -144,7 +153,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ${{ steps.artifact.outputs.testrunner }}
+          asset_path: ${{ steps.artifact.outputs.testrunner_path }}
           asset_name: ${{ steps.artifact.outputs.testrunner }}
           asset_content_type: application/gzip
 
@@ -154,6 +163,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ${{ steps.artifact.outputs.disassembler }}
+          asset_path: ${{ steps.artifact.outputs.disassembler_path }}
           asset_name: ${{ steps.artifact.outputs.disassembler }}
           asset_content_type: application/gzip

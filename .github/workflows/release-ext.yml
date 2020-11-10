@@ -179,11 +179,17 @@ jobs:
       - if: ${{ matrix.os.platform == 'win' }}
         run: mv ./target/release/${{ matrix.crate.name }}.dll dist/
 
+      - name: add build info
+        run: |
+          uname -a > dist/build-info.txt
+          rustc -V >> dist/build-info.txt
+
       - name: Archive
         id: archive
         run: |
+          ARCH="$(uname -m)"
           VERSION=${{ steps.version.outputs.version }}
-          PKGNAME="cdynlib-${{ matrix.crate.name }}-$VERSION-${{ matrix.os.platform }}"
+          PKGNAME="cdynlib-${{ matrix.crate.name }}-$VERSION-${{ matrix.os.platform }}-$ARCH"
           TARBALL=$PKGNAME.tar.gz
           mv dist $PKGNAME
           tar -czf $TARBALL $PKGNAME
