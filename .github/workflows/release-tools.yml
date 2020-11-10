@@ -15,16 +15,19 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: get release url
+      - name: get release info
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           run_id: ${{ github.event.workflow_run.id }}
           name: release assets url
-      - name: read release url
+      - name: read release info
         id: release
-        run: echo ::set-output name=upload_url::$(cat release-upload.url)
+        run: |
+          echo ::set-output name=tag::$(cat release-upload.url | cut -d \  -f 1)
+          echo ::set-output name=upload_url::$(cat release-upload.url | cut -d \  -f 2)
     outputs:
+      tag: ${{ steps.release.outputs.tag }}
       upload_url: ${{ steps.release.outputs.upload_url }}
 
   build:
@@ -47,7 +50,9 @@ jobs:
         shell: bash
 
     steps:
-      - name: Checkout
+      # - run: echo '${{ toJson(github.event) }}'
+
+      - name: Checkout (${{ needs.release.outputs.tag }}-${{ github.event.workflow_run.head_sha }})
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
@@ -88,24 +93,78 @@ jobs:
           echo "OS_BIN_EXT=.exe" >> $GITHUB_ENV
           echo "::set-env name=OS_BIN_EXT::.exe"
 
-      - name: rename some executables
+      - name: save build info
+        id: build-info
+        run: |
+          uname -a > build-info.txt
+          rustc -V >> build-info.txt
+          echo "::set-output name=arch::$(uname -m)"
+
+      - name: prepare dist dirs
+        id: dist
+        run: |
+          RELEASE_DIR=./target/release
+          DIST_DIR=$RELEASE_DIR/dist
+          mkdir -p $DIST_DIR
+          echo "::set-output name=build::$RELEASE_DIR"
+          echo "::set-output name=dist::$DIST_DIR"
+
+      - name: prepare & pack artifacts
+        id: toolchain
+        run: |
+          echo "git-tag r '$GITHUB_REF'"
+          echo "git-tag d '$(git describe --tags)'"
+          echo "tag by release ${{ needs.release.outputs.tag }}"
+
+          ARCH="${{ steps.build-info.outputs.arch }}"
+          RELEASE_DIR=${{ steps.dist.outputs.build }}
+          DIST_DIR=${{ steps.dist.outputs.dist }}
+          PKGNAME="move-toolchain-${{ needs.release.outputs.tag }}-${{ matrix.platform }}-$ARCH"
+          PKG_DIR=$DIST_DIR/$PKGNAME
+          TARBALL=$PKGNAME.tar.gz
+          PKG_BIN_DIR=$PKG_DIR/bin
+
+          MLS_NAME=move-language-server$OS_BIN_EXT
+          MOVEC_NAME=movec$OS_BIN_EXT
+          EXECUTOR_NAME=move-executor$OS_BIN_EXT
+          TESTRUNNER_NAME=move-testrunner$OS_BIN_EXT
+          DISASSEMBLER_NAME=move-disassembler$OS_BIN_EXT
+
+          mkdir -p $PKG_BIN_DIR
+          cp build-info.txt $PKG_DIR/
+
+          cp $RELEASE_DIR/executor_cli$OS_BIN_EXT $PKG_BIN_DIR/$EXECUTOR_NAME
+          cp $RELEASE_DIR/testrunner$OS_BIN_EXT $PKG_BIN_DIR/$TESTRUNNER_NAME
+          cp $RELEASE_DIR/disassembler$OS_BIN_EXT $PKG_BIN_DIR/$DISASSEMBLER_NAME
+          cp $RELEASE_DIR/move-language-server$OS_BIN_EXT $PKG_BIN_DIR/$MLS_NAME
+          cp $RELEASE_DIR/movec$OS_BIN_EXT $PKG_BIN_DIR/$MOVEC_NAME
+
+          ls -R $PKG_BIN_DIR
+
+          cd $PKG_DIR/../
+          tar -czf $TARBALL $PKGNAME
+          echo "::set-output name=name::$TARBALL"
+          echo "::set-output name=path::$PKG_DIR/../$TARBALL"
+
+      - name: prepare standalone executables
         id: artifact
         run: |
-          ARCH="$(uname -m)"
-          RELEASE_DIR=./target/release
+          ARCH="${{ steps.build-info.outputs.arch }}"
+          RELEASE_DIR=${{ steps.dist.outputs.build }}
+
           MLS_NAME=move-language-server-${{ steps.mls.outputs.version }}-${{ matrix.platform }}-$ARCH$OS_BIN_EXT
           MOVEC_NAME=movec-${{ steps.movec.outputs.version }}-${{ matrix.platform }}-$ARCH$OS_BIN_EXT
           EXECUTOR_NAME=move-executor-${{ steps.executor.outputs.version }}-${{ matrix.platform }}-$ARCH$OS_BIN_EXT
           TESTRUNNER_NAME=move-testrunner-${{ steps.executor.outputs.version }}-${{ matrix.platform }}-$ARCH$OS_BIN_EXT
           DISASSEMBLER_NAME=move-disassembler-${{ steps.disassembler.outputs.version }}-${{ matrix.platform }}-$ARCH$OS_BIN_EXT
           cd $RELEASE_DIR
-          ls
+
           mv executor_cli$OS_BIN_EXT $EXECUTOR_NAME
           mv testrunner$OS_BIN_EXT $TESTRUNNER_NAME
           mv disassembler$OS_BIN_EXT $DISASSEMBLER_NAME
           mv move-language-server$OS_BIN_EXT $MLS_NAME
           mv movec$OS_BIN_EXT $MOVEC_NAME
-          ls
+
           echo "::set-output name=mls::$MLS_NAME"
           echo "::set-output name=movec::$MOVEC_NAME"
           echo "::set-output name=executor::$EXECUTOR_NAME"
@@ -116,6 +175,16 @@ jobs:
           echo "::set-output name=executor_path::$RELEASE_DIR/$EXECUTOR_NAME"
           echo "::set-output name=testrunner_path::$RELEASE_DIR/$TESTRUNNER_NAME"
           echo "::set-output name=disassembler_path::$RELEASE_DIR/$DISASSEMBLER_NAME"
+
+      - name: Upload Move-Toolchain
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: ${{ steps.toolchain.outputs.path }}
+          asset_name: ${{ steps.toolchain.outputs.name }}
+          asset_content_type: application/gzip
 
       - name: Upload MLS
         uses: actions/upload-release-asset@v1

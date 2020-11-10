@@ -45,7 +45,7 @@ jobs:
             ${{ steps.changelog.outputs.changelog }}
 
       - name: Save release assets url for other workflows
-        run: echo "${{ steps.release.outputs.upload_url }}" > release-upload.url
+        run: echo "${{ steps.version.outputs.value }} ${{ steps.release.outputs.upload_url }}" > release-upload.url
 
       - name: Set release assets url as artifact
         uses: actions/upload-artifact@v2
@@ -56,24 +56,25 @@ jobs:
           retention-days: 1
 
     outputs:
+      tag: ${{ steps.version.outputs.value }}
       upload_url: ${{ steps.release.outputs.upload_url }}
 
-  build:
-    needs: release
-    runs-on: ${{ matrix.os }}
+  # build:
+  #   needs: release
+  #   runs-on: ${{ matrix.os }}
 
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os:
+  #         - ubuntu-latest
+  #         - macos-latest
+  #         - windows-latest
 
-    defaults:
-      run:
-        shell: bash
+  #   defaults:
+  #     run:
+  #       shell: bash
 
-    steps:
-      - name: release url
-        run: echo "${{ needs.release.outputs.upload_url }}"
+  #   steps:
+  #     - name: release url
+  #       run: echo "${{ needs.release.outputs.upload_url }}"
