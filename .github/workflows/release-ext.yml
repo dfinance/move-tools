@@ -1,0 +1,196 @@
+name: Build Release Ext
+on:
+  workflow_run:
+    workflows: [Create Release Page]
+    types: [completed]
+
+env:
+  RUSTFLAGS: -D warnings
+  CARGO_INCREMENTAL: 0
+  RUSTUP_MAX_RETRIES: 10
+  CARGO_NET_RETRY: 10
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: get release url
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: ${{ github.event.workflow_run.workflow_id }}
+          run_id: ${{ github.event.workflow_run.id }}
+          name: release assets url
+      - name: read release url
+        id: release
+        run: echo ::set-output name=upload_url::$(cat release-upload.url)
+    outputs:
+      upload_url: ${{ steps.release.outputs.upload_url }}
+
+  wasm:
+    name: WASM Lib
+    needs: release
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        crate:
+          - disassembler
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: Get crate version
+        id: version
+        uses: ./.github/actions/crate-version
+        with:
+          crate: ${{ matrix.crate }}
+
+      - name: "Install tools: binaryen"
+        id: tools
+        run: |
+          VERSION="version_97"
+          PKGNAME="binaryen-$VERSION-x86_64-linux"
+          TARBALL=$PKGNAME.tar.gz
+          URL="https://github.com/WebAssembly/binaryen/releases/download/$VERSION/$TARBALL"
+          curl -L $URL -o ./binaryen
+          tar -xzf binaryen
+          binaryen-$VERSION/bin/wasm-opt --version
+          echo "::set-output name=wasmopt::$PWD/binaryen-$VERSION/bin/wasm-opt"
+
+      - name: "Install tools: wasm-snip"
+        run: cargo install wasm-snip
+
+      - name: "Install tools: wasm-bindgen"
+        uses: jetli/wasm-bindgen-action@v0.1.0
+        with:
+          version: "0.2.68"
+
+      - name: Build ${{ matrix.crate }}
+        run: cargo build -p ${{ matrix.crate }} --lib --target wasm32-unknown-unknown --release
+
+      - name: Generate js/ts bindings
+        run: |
+          wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm --out-dir ./dist --no-modules --no-modules-global ${{ matrix.crate }}
+          wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm --out-dir ./dist/js-modules
+
+      - name: Prepare optimize build
+        run: wasm-snip --snip-rust-panicking-code --skip-producers-section dist/${{ matrix.crate }}_bg.wasm -o dist/${{ matrix.crate }}_bg.wasm
+
+      - name: Finally optimize build
+        run: ${{ steps.tools.outputs.wasmopt }} dist/${{ matrix.crate }}_bg.wasm -o dist/${{ matrix.crate }}_bg.wasm --enable-mutable-globals --dce -Oz --enable-gc --enable-reference-types -c
+
+      - name: Archive
+        id: archive
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          PKGNAME="${{ matrix.crate }}-$VERSION-wasm"
+          TARBALL=$PKGNAME.tar.gz
+          mv dist ${{ matrix.crate }}-$VERSION
+          tar -czf $TARBALL ${{ matrix.crate }}-$VERSION
+          echo "::set-output name=tarball::$TARBALL"
+
+      - name: Upload artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: ./${{ steps.archive.outputs.tarball }}
+          asset_name: ${{ steps.archive.outputs.tarball }}
+          asset_content_type: application/gzip
+
+  cffi:
+    name: C-Lib with CFFI
+    needs: release
+    runs-on: ${{ matrix.os.name }}
+
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - name: ubuntu-latest
+            platform: linux
+          - name: macos-latest
+            platform: mac
+          - name: windows-latest
+            platform: win # gnu
+        crate:
+          - name: disassembler
+            path: ./lang/disassembler
+            mod: src/ext/cffi.rs
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Get crate version
+        id: version
+        uses: ./.github/actions/crate-version
+        with:
+          crate: ${{ matrix.crate.name }}
+
+      - name: "Install tools: cbindgen"
+        run: cargo install cbindgen
+
+      - name: Build ${{ matrix.crate.name }}
+        run: |
+          cd ${{ matrix.crate.path }}
+          cargo build -p ${{ matrix.crate.name }} --lib --features cffi --release
+
+      - name: Generate C bindings
+        run: cbindgen -l=c --crate=${{ matrix.crate.name }} -o ./dist/include/${{ matrix.crate.name }}.h ${{ matrix.crate.path }}/${{ matrix.crate.mod }}
+
+      - if: ${{ matrix.os.platform == 'mac' }}
+        run: mv ./target/release/lib${{ matrix.crate.name }}.dylib dist/
+      - if: ${{ matrix.os.platform == 'linux' }}
+        run: mv ./target/release/lib${{ matrix.crate.name }}.so dist/
+      - if: ${{ matrix.os.platform == 'win' }}
+        run: mv ./target/release/${{ matrix.crate.name }}.dll dist/
+
+      - name: Archive
+        id: archive
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          PKGNAME="cdynlib-${{ matrix.crate.name }}-$VERSION-${{ matrix.os.platform }}"
+          TARBALL=$PKGNAME.tar.gz
+          mv dist $PKGNAME
+          tar -czf $TARBALL $PKGNAME
+          echo "::set-output name=tarball::$TARBALL"
+
+      - name: Upload artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: ./${{ steps.archive.outputs.tarball }}
+          asset_name: ${{ steps.archive.outputs.tarball }}
+          asset_content_type: application/gzip
