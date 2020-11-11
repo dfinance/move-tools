@@ -130,7 +130,7 @@ jobs:
           mkdir -p $PKG_BIN_DIR
           cp build-info.txt $PKG_DIR/
 
-          cp $RELEASE_DIR/executor_cli$OS_BIN_EXT $PKG_BIN_DIR/$EXECUTOR_NAME
+          cp $RELEASE_DIR/executor$OS_BIN_EXT $PKG_BIN_DIR/$EXECUTOR_NAME
           cp $RELEASE_DIR/testrunner$OS_BIN_EXT $PKG_BIN_DIR/$TESTRUNNER_NAME
           cp $RELEASE_DIR/disassembler$OS_BIN_EXT $PKG_BIN_DIR/$DISASSEMBLER_NAME
           cp $RELEASE_DIR/move-language-server$OS_BIN_EXT $PKG_BIN_DIR/$MLS_NAME
@@ -159,7 +159,7 @@ jobs:
           DISASSEMBLER_NAME=move-disassembler-${{ steps.disassembler.outputs.version }}-${{ matrix.platform }}-$ARCH$OS_BIN_EXT
           cd $RELEASE_DIR
 
-          mv executor_cli$OS_BIN_EXT $EXECUTOR_NAME
+          mv executor$OS_BIN_EXT $EXECUTOR_NAME
           mv testrunner$OS_BIN_EXT $TESTRUNNER_NAME
           mv disassembler$OS_BIN_EXT $DISASSEMBLER_NAME
           mv move-language-server$OS_BIN_EXT $MLS_NAME
