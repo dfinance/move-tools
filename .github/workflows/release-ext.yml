@@ -69,12 +69,13 @@ jobs:
 
       - name: "Install tools: binaryen"
         id: tools
+        env:
+          VERSION: version_97
         run: |
-          VERSION="version_97"
-          PKGNAME="binaryen-$VERSION-x86_64-linux"
-          TARBALL=$PKGNAME.tar.gz
-          URL="https://github.com/WebAssembly/binaryen/releases/download/$VERSION/$TARBALL"
-          curl -L $URL -o ./binaryen
+          TARBALL=binaryen-$VERSION-x86_64-linux.tar.gz
+          curl -L \
+            "https://github.com/WebAssembly/binaryen/releases/download/$VERSION/$TARBALL" \
+            -o ./binaryen
           tar -xzf binaryen
           binaryen-$VERSION/bin/wasm-opt --version
           echo "::set-output name=wasmopt::$PWD/binaryen-$VERSION/bin/wasm-opt"
@@ -102,16 +103,28 @@ jobs:
           echo "::set-output name=name::$PKGNAME"
           echo "::set-output name=path::./$PKGNAME"
 
-      - name: Generate js/ts bindings
-        run: |
-          wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm --out-dir ${{ steps.dist.outputs.path }} --no-modules --no-modules-global ${{ matrix.crate }}
-          wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm --out-dir ${{ steps.dist.outputs.path }}/js-modules
+      - name: Generate js/ts bindings (no-modules)
+        run: >
+          wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm
+          --out-dir ${{ steps.dist.outputs.path }}
+          --no-modules
+          --no-modules-global ${{ matrix.crate }}
+      - name: Generate js/ts bindings (modules)
+        run: >
+          wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm
+          --out-dir ${{ steps.dist.outputs.path }}/js-modules
 
       - name: Prepare optimize build
-        run: wasm-snip --snip-rust-panicking-code --skip-producers-section ${{ steps.dist.outputs.path }}/${{ matrix.crate }}_bg.wasm -o ${{ steps.dist.outputs.path }}/${{ matrix.crate }}_bg.wasm
+        run: >
+          wasm-snip --snip-rust-panicking-code
+          --skip-producers-section ${{ steps.dist.outputs.path }}/${{ matrix.crate }}_bg.wasm
+          -o ${{ steps.dist.outputs.path }}/${{ matrix.crate }}_bg.wasm
 
       - name: Finally optimize build
-        run: ${{ steps.tools.outputs.wasmopt }} ${{ steps.dist.outputs.path }}/${{ matrix.crate }}_bg.wasm -o ${{ steps.dist.outputs.path }}/${{ matrix.crate }}_bg.wasm --enable-mutable-globals --dce -Oz --enable-gc --enable-reference-types -c
+        run: >
+          ${{ steps.tools.outputs.wasmopt }} ${{ steps.dist.outputs.path }}/${{ matrix.crate }}_bg.wasm
+          -o ${{ steps.dist.outputs.path }}/${{ matrix.crate }}_bg.wasm
+          --enable-mutable-globals --dce -Oz --enable-gc --enable-reference-types -c
 
       - id: archive
         name: archive
@@ -193,17 +206,25 @@ jobs:
 
       - name: prepare dist
         id: dist
+        env:
+          PKGNAME_PART: cdynlib-${{ matrix.crate.name }}-${{ steps.version.outputs.version }}-${{ matrix.os.platform }}
         run: |
-          PKGNAME="cdynlib-${{ matrix.crate.name }}-${{ steps.version.outputs.version }}-${{ matrix.os.platform }}-$(uname -m)"
+          PKGNAME="$PKGNAME_PART-$(uname -m)"
           mkdir $PKGNAME
           echo "::set-output name=name::$PKGNAME"
           echo "::set-output name=path::./$PKGNAME"
 
       - name: Generate C bindings
-        run: cbindgen -l=c --crate=${{ matrix.crate.name }} -o ${{ steps.dist.outputs.path }}/include/${{ matrix.crate.name }}.h ${{ matrix.crate.path }}/${{ matrix.crate.mod }}
+        run: >
+          cbindgen -l=c --crate=${{ matrix.crate.name }}
+          -o ${{ steps.dist.outputs.path }}/include/${{ matrix.crate.name }}.h
+          ${{ matrix.crate.path }}/${{ matrix.crate.mod }}
 
       - name: move lib to dist
-        run: mv ./target/release/${{ matrix.os.lib-pre }}${{ matrix.crate.name }}.${{ matrix.os.lib-ext }} ${{ steps.dist.outputs.path }}/
+        run: >
+          mv
+          ./target/release/${{ matrix.os.lib-pre }}${{ matrix.crate.name }}.${{ matrix.os.lib-ext }}
+          ${{ steps.dist.outputs.path }}/
 
       - name: add build info
         run: |
