@@ -58,23 +58,21 @@ jobs:
     outputs:
       tag: ${{ steps.version.outputs.value }}
       upload_url: ${{ steps.release.outputs.upload_url }}
-
-  # build:
-  #   needs: release
-  #   runs-on: ${{ matrix.os }}
-
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os:
-  #         - ubuntu-latest
-  #         - macos-latest
-  #         - windows-latest
-
-  #   defaults:
-  #     run:
-  #       shell: bash
-
-  #   steps:
-  #     - name: release url
-  #       run: echo "${{ needs.release.outputs.upload_url }}"
+#
+#     # example post-create-release job:
+#     build:
+#       needs: release
+#       runs-on: ${{ matrix.os }}
+#       strategy:
+#         fail-fast: false
+#         matrix:
+#           os:
+#             - ubuntu-latest
+#             - macos-latest
+#             - windows-latest
+#       defaults:
+#         run:
+#           shell: bash
+#       steps:
+#         - name: release url
+#           run: echo "${{ needs.release.outputs.upload_url }}"

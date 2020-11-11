@@ -21,11 +21,11 @@ runs:
       run: |
         cd ${{ inputs.pwd }}
         CRATE_LINE=`cargo tree --color=never -p ${{ inputs.crate }} -q 2>&1 | head -n 1`
-        CRATE_VER=`echo $CRATE_LINE | sed 's/^.*v\([0-9]*\.[0-9]*[.0-9]*\(\-\w\+\)*\?\).*$/\1/'`
+        CRATE_VER=`echo $CRATE_LINE | sed 's/^.*\(v[0-9]*\.[0-9]*[.0-9]*\(\-\w\+\)*\?\).*$/\1/'`
         [ "x$CRATE_VER" == "x$CRATE_LINE" ] && CRATE_VER=`echo $CRATE_LINE | cut -d \  -f 2`
+        CRATE_VER=`echo $CRATE_VER | sed 's/^v\(.*\)/\1/'`
         echo "::set-output name=value::$CRATE_VER"
         echo "${{ inputs.crate }} version: $CRATE_VER"
-    # - run: ${{ github.action_path }}/post.sh
 branding:
   icon: "package"
   color: "orange"

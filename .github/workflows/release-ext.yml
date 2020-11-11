@@ -80,7 +80,11 @@ jobs:
           echo "::set-output name=wasmopt::$PWD/binaryen-$VERSION/bin/wasm-opt"
 
       - name: "Install tools: wasm-snip"
-        run: cargo install wasm-snip
+        uses: actions-rs/install@v0.1
+        with:
+          crate: wasm-snip
+          version: latest
+          use-tool-cache: true
 
       - name: "Install tools: wasm-bindgen"
         uses: jetli/wasm-bindgen-action@v0.1.0
@@ -90,26 +94,31 @@ jobs:
       - name: Build ${{ matrix.crate }}
         run: cargo build -p ${{ matrix.crate }} --lib --target wasm32-unknown-unknown --release
 
+      - name: prepare dist
+        id: dist
+        run: |
+          PKGNAME="move-${{ matrix.crate }}-${{ steps.version.outputs.version }}-wasm32"
+          mkdir $PKGNAME
+          echo "::set-output name=name::$PKGNAME"
+          echo "::set-output name=path::./$PKGNAME"
+
       - name: Generate js/ts bindings
         run: |
-          wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm --out-dir ./dist --no-modules --no-modules-global ${{ matrix.crate }}
-          wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm --out-dir ./dist/js-modules
+          wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm --out-dir ${{ steps.dist.outputs.path }} --no-modules --no-modules-global ${{ matrix.crate }}
+          wasm-bindgen target/wasm32-unknown-unknown/release/${{ matrix.crate }}.wasm --out-dir ${{ steps.dist.outputs.path }}/js-modules
 
       - name: Prepare optimize build
-        run: wasm-snip --snip-rust-panicking-code --skip-producers-section dist/${{ matrix.crate }}_bg.wasm -o dist/${{ matrix.crate }}_bg.wasm
+        run: wasm-snip --snip-rust-panicking-code --skip-producers-section ${{ steps.dist.outputs.path }}/${{ matrix.crate }}_bg.wasm -o ${{ steps.dist.outputs.path }}/${{ matrix.crate }}_bg.wasm
 
       - name: Finally optimize build
-        run: ${{ steps.tools.outputs.wasmopt }} dist/${{ matrix.crate }}_bg.wasm -o dist/${{ matrix.crate }}_bg.wasm --enable-mutable-globals --dce -Oz --enable-gc --enable-reference-types -c
+        run: ${{ steps.tools.outputs.wasmopt }} ${{ steps.dist.outputs.path }}/${{ matrix.crate }}_bg.wasm -o ${{ steps.dist.outputs.path }}/${{ matrix.crate }}_bg.wasm --enable-mutable-globals --dce -Oz --enable-gc --enable-reference-types -c
 
-      - name: Archive
-        id: archive
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          PKGNAME="move-${{ matrix.crate }}-$VERSION-wasm32"
-          TARBALL=$PKGNAME.tar.gz
-          mv dist ${{ matrix.crate }}-$VERSION
-          tar -czf $TARBALL ${{ matrix.crate }}-$VERSION
-          echo "::set-output name=tarball::$TARBALL"
+      - id: archive
+        name: archive
+        uses: ./.github/actions/archive
+        with:
+          name: ${{ steps.dist.outputs.name }}
+          path: ${{ steps.dist.outputs.path }}
 
       - name: Upload artifact
         uses: actions/upload-release-asset@v1
@@ -117,8 +126,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ./${{ steps.archive.outputs.tarball }}
-          asset_name: ${{ steps.archive.outputs.tarball }}
+          asset_name: ${{ steps.archive.outputs.name }}
+          asset_path: ./${{ steps.archive.outputs.path }}
           asset_content_type: application/gzip
 
   cffi:
@@ -136,10 +145,16 @@ jobs:
         os:
           - name: ubuntu-latest
             platform: linux
+            lib-pre: lib
+            lib-ext: so
           - name: macos-latest
             platform: mac
+            lib-pre: lib
+            lib-ext: dylib
           - name: windows-latest
-            platform: win # gnu
+            platform: win # gnu,mingw64
+            lib-pre: ""
+            lib-ext: dll
         crate:
           - name: disassembler
             path: ./lang/disassembler
@@ -165,39 +180,43 @@ jobs:
           crate: ${{ matrix.crate.name }}
 
       - name: "Install tools: cbindgen"
-        run: cargo install cbindgen
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cbindgen
+          version: latest
+          use-tool-cache: true
 
       - name: Build ${{ matrix.crate.name }}
         run: |
           cd ${{ matrix.crate.path }}
           cargo build -p ${{ matrix.crate.name }} --lib --features cffi --release
 
-      - name: Generate C bindings
-        run: cbindgen -l=c --crate=${{ matrix.crate.name }} -o ./dist/include/${{ matrix.crate.name }}.h ${{ matrix.crate.path }}/${{ matrix.crate.mod }}
+      - name: prepare dist
+        id: dist
+        run: |
+          PKGNAME="cdynlib-${{ matrix.crate.name }}-${{ steps.version.outputs.version }}-${{ matrix.os.platform }}-$(uname -m)"
+          mkdir $PKGNAME
+          echo "::set-output name=name::$PKGNAME"
+          echo "::set-output name=path::./$PKGNAME"
 
-      - if: ${{ matrix.os.platform == 'mac' }}
-        run: mv ./target/release/lib${{ matrix.crate.name }}.dylib dist/
-      - if: ${{ matrix.os.platform == 'linux' }}
-        run: mv ./target/release/lib${{ matrix.crate.name }}.so dist/
-      - if: ${{ matrix.os.platform == 'win' }}
-        run: mv ./target/release/${{ matrix.crate.name }}.dll dist/
+      - name: Generate C bindings
+        run: cbindgen -l=c --crate=${{ matrix.crate.name }} -o ${{ steps.dist.outputs.path }}/include/${{ matrix.crate.name }}.h ${{ matrix.crate.path }}/${{ matrix.crate.mod }}
+
+      - name: move lib to dist
+        run: mv ./target/release/${{ matrix.os.lib-pre }}${{ matrix.crate.name }}.${{ matrix.os.lib-ext }} ${{ steps.dist.outputs.path }}/
 
       - name: add build info
         run: |
-          uname -a > dist/build-info.txt
-          rustc -V >> dist/build-info.txt
-          cbindgen -V >> dist/build-info.txt
+          uname -a > ${{ steps.dist.outputs.path }}/build-info.txt
+          rustc -V >> ${{ steps.dist.outputs.path }}/build-info.txt
+          cbindgen -V >> ${{ steps.dist.outputs.path }}/build-info.txt
 
-      - name: Archive
-        id: archive
-        run: |
-          ARCH="$(uname -m)"
-          VERSION=${{ steps.version.outputs.version }}
-          PKGNAME="cdynlib-${{ matrix.crate.name }}-$VERSION-${{ matrix.os.platform }}-$ARCH"
-          TARBALL=$PKGNAME.tar.gz
-          mv dist $PKGNAME
-          tar -czf $TARBALL $PKGNAME
-          echo "::set-output name=tarball::$TARBALL"
+      - id: archive
+        name: archive
+        uses: ./.github/actions/archive
+        with:
+          name: ${{ steps.dist.outputs.name }}
+          path: ${{ steps.dist.outputs.path }}
 
       - name: Upload artifact
         uses: actions/upload-release-asset@v1
@@ -205,6 +224,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ./${{ steps.archive.outputs.tarball }}
-          asset_name: ${{ steps.archive.outputs.tarball }}
+          asset_path: ./${{ steps.archive.outputs.name }}
+          asset_name: ${{ steps.archive.outputs.name }}
           asset_content_type: application/gzip

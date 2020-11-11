@@ -43,15 +43,13 @@ jobs:
           - os: macos-latest
             platform: mac
           - os: windows-latest
-            platform: win
+            platform: win # gnu,mingw64
 
     defaults:
       run:
         shell: bash
 
     steps:
-      # - run: echo '${{ toJson(github.event) }}'
-
       - name: Checkout (${{ needs.release.outputs.tag }}-${{ github.event.workflow_run.head_sha }})
         uses: actions/checkout@v2
         with:
@@ -109,7 +107,7 @@ jobs:
           echo "::set-output name=build::$RELEASE_DIR"
           echo "::set-output name=dist::$DIST_DIR"
 
-      - name: prepare & pack artifacts
+      - name: prepare toolchain
         id: toolchain
         run: |
           echo "git-tag r '$GITHUB_REF'"
@@ -119,9 +117,8 @@ jobs:
           ARCH="${{ steps.build-info.outputs.arch }}"
           RELEASE_DIR=${{ steps.dist.outputs.build }}
           DIST_DIR=${{ steps.dist.outputs.dist }}
-          PKGNAME="move-toolchain-${{ needs.release.outputs.tag }}-${{ matrix.platform }}-$ARCH"
-          PKG_DIR=$DIST_DIR/$PKGNAME
-          TARBALL=$PKGNAME.tar.gz
+          PKG_NAME="move-toolchain-${{ needs.release.outputs.tag }}-${{ matrix.platform }}-$ARCH"
+          PKG_DIR=$DIST_DIR/$PKG_NAME
           PKG_BIN_DIR=$PKG_DIR/bin
 
           MLS_NAME=move-language-server$OS_BIN_EXT
@@ -139,12 +136,15 @@ jobs:
           cp $RELEASE_DIR/move-language-server$OS_BIN_EXT $PKG_BIN_DIR/$MLS_NAME
           cp $RELEASE_DIR/movec$OS_BIN_EXT $PKG_BIN_DIR/$MOVEC_NAME
 
-          ls -R $PKG_BIN_DIR
+          echo "::set-output name=name::$PKG_NAME"
+          echo "::set-output name=path::$PKG_DIR"
 
-          cd $PKG_DIR/../
-          tar -czf $TARBALL $PKGNAME
-          echo "::set-output name=name::$TARBALL"
-          echo "::set-output name=path::$PKG_DIR/../$TARBALL"
+      - name: archive toolchain
+        id: archive
+        uses: ./.github/actions/archive
+        with:
+          name: ${{ steps.toolchain.outputs.name }}
+          path: ${{ steps.toolchain.outputs.path }}
 
       - name: prepare standalone executables
         id: artifact
@@ -176,17 +176,17 @@ jobs:
           echo "::set-output name=testrunner_path::$RELEASE_DIR/$TESTRUNNER_NAME"
           echo "::set-output name=disassembler_path::$RELEASE_DIR/$DISASSEMBLER_NAME"
 
-      - name: Upload Move-Toolchain
+      - name: upload Toolchain
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ${{ steps.toolchain.outputs.path }}
-          asset_name: ${{ steps.toolchain.outputs.name }}
+          asset_path: ${{ steps.archive.outputs.path }}
+          asset_name: ${{ steps.archive.outputs.name }}
           asset_content_type: application/gzip
 
-      - name: Upload MLS
+      - name: upload MLS
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -196,7 +196,7 @@ jobs:
           asset_name: ${{ steps.artifact.outputs.mls }}
           asset_content_type: application/gzip
 
-      - name: Upload Movec
+      - name: upload Movec
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -206,7 +206,7 @@ jobs:
           asset_name: ${{ steps.artifact.outputs.movec }}
           asset_content_type: application/gzip
 
-      - name: Upload Executor
+      - name: upload Executor
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -216,7 +216,7 @@ jobs:
           asset_name: ${{ steps.artifact.outputs.executor }}
           asset_content_type: application/gzip
 
-      - name: Upload TestRunner
+      - name: upload TestRunner
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -226,7 +226,7 @@ jobs:
           asset_name: ${{ steps.artifact.outputs.testrunner }}
           asset_content_type: application/gzip
 
-      - name: Upload Disassembler
+      - name: upload Disassembler
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
