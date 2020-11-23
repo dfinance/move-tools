@@ -1,9 +1,9 @@
-use crate::cmd::Cmd;
+use crate::cmd::{Cmd, load_dependencies};
 use crate::context::Context;
 use anyhow::Error;
 use structopt::StructOpt;
 use crate::index::Index;
-use lang::compiler::file::{MoveFile, load_move_files};
+use lang::compiler::file::load_move_files;
 use move_executor::executor::{Executor, render_test_result};
 
 /// Run tests.
@@ -26,13 +26,8 @@ impl Cmd for Test {
         let mut index = Index::load(&ctx)?;
         index.build()?;
 
-        let dep_list = index.make_dependency_vec(&[&script_dir, &module_dir, &tests_dir])?;
-
-        let mut dep_list = dep_list
-            .iter()
-            .map(|path| path.as_str())
-            .map(MoveFile::load)
-            .collect::<Result<Vec<_>, Error>>()?;
+        let dep_set = index.make_dependency_set(&[&script_dir, &module_dir, &tests_dir])?;
+        let mut dep_list = load_dependencies(dep_set)?;
 
         dep_list.extend(load_move_files(&[script_dir, module_dir])?);
 

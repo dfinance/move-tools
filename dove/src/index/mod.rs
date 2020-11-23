@@ -91,7 +91,7 @@ impl<'a> Index<'a> {
         Ok(())
     }
 
-    pub fn make_dependency_vec<P: AsRef<Path>>(
+    pub fn make_dependency_set<P: AsRef<Path>>(
         &mut self,
         paths: &[P],
     ) -> Result<HashSet<Rc<String>>, Error> {
@@ -99,16 +99,29 @@ impl<'a> Index<'a> {
         let mut imports = HashSet::new();
 
         for path in paths {
-            for mv_file in move_dir_iter(path) {
+            let path = path.as_ref();
+            if path.is_file() {
                 let f_meta = source_meta(
-                    mv_file.path(),
+                    path,
                     Some(self.ctx.manifest.package.account_address),
                     self.ctx.dialect.as_ref(),
                 )?;
-
                 for meta in f_meta.meta {
                     modules.insert(meta.module_id);
                     imports.extend(meta.imports);
+                }
+            } else {
+                for mv_file in move_dir_iter(path) {
+                    let f_meta = source_meta(
+                        mv_file.path(),
+                        Some(self.ctx.manifest.package.account_address),
+                        self.ctx.dialect.as_ref(),
+                    )?;
+
+                    for meta in f_meta.meta {
+                        modules.insert(meta.module_id);
+                        imports.extend(meta.imports);
+                    }
                 }
             }
         }

@@ -1,9 +1,9 @@
-use crate::cmd::Cmd;
+use crate::cmd::{Cmd, load_dependencies};
 use crate::context::Context;
 use anyhow::Error;
 use structopt::StructOpt;
 use crate::index::Index;
-use lang::compiler::file::{MoveFile, load_move_files};
+use lang::compiler::file::load_move_files;
 use lang::builder::{Artifacts, MoveBuilder};
 use termcolor::{StandardStream, ColorChoice};
 use libra::compiler::output_errors;
@@ -25,13 +25,8 @@ impl Cmd for Build {
         let mut index = Index::load(&ctx)?;
         index.build()?;
 
-        let dep_list = index.make_dependency_vec(&[&script_dir, &module_dir])?;
-
-        let dep_list = dep_list
-            .iter()
-            .map(|path| path.as_str())
-            .map(MoveFile::load)
-            .collect::<Result<Vec<_>, Error>>()?;
+        let dep_set = index.make_dependency_set(&[&script_dir, &module_dir])?;
+        let dep_list = load_dependencies(dep_set)?;
 
         let source_list = load_move_files(&[script_dir, module_dir])?;
 

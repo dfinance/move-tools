@@ -1,5 +1,8 @@
 use crate::context::{Context, get_context};
-use anyhow::Result;
+use anyhow::{Result, Error};
+use lang::compiler::file::MoveFile;
+use std::collections::HashSet;
+use std::rc::Rc;
 
 /// Project builder.
 pub mod build;
@@ -39,4 +42,15 @@ pub trait Cmd {
         let context = self.context()?;
         self.apply(context)
     }
+}
+
+/// Load dependencies by set of path.
+pub fn load_dependencies(
+    path_set: HashSet<Rc<String>>,
+) -> Result<Vec<MoveFile<'static, 'static>>, Error> {
+    path_set
+        .iter()
+        .map(|path| path.as_str())
+        .map(MoveFile::load)
+        .collect()
 }

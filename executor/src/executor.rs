@@ -84,13 +84,10 @@ pub fn render_test_result(
     test_name: &str,
     result: Result<PipelineExecutionResult, Error>,
 ) -> Result<bool> {
-    let exec_result = result
-        .map_err(|err| match err.downcast::<CompilerError>() {
-            Ok(compiler_error) => {
-                report_errors(compiler_error.source_map, compiler_error.errors)
-            }
-            Err(error) => error,
-        })?;
+    let exec_result = result.map_err(|err| match err.downcast::<CompilerError>() {
+        Ok(compiler_error) => report_errors(compiler_error.source_map, compiler_error.errors),
+        Err(error) => error,
+    })?;
 
     Ok(match exec_result.last() {
         None => {
@@ -104,10 +101,7 @@ pub fn render_test_result(
                 for step_result in exec_result.step_results {
                     print!(
                         "{}",
-                        textwrap::indent(
-                            &format_step_result(step_result, true, false),
-                            "    ",
-                        )
+                        textwrap::indent(&format_step_result(step_result, true, false), "    ",)
                     );
                 }
                 println!();
