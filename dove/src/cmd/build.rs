@@ -46,6 +46,7 @@ impl Cmd for Build {
     }
 }
 
+/// Verify and store compilation results.
 pub fn verify_and_store(
     ctx: &Context,
     files: FilesSourceText,

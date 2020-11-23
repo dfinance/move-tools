@@ -10,33 +10,48 @@ use std::rc::Rc;
 use std::collections::{HashMap, HashSet};
 use libra::prelude::ModuleId;
 
+/// Modules holder.
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct Modules {
+    /// Modules vector.
     pub modules: Vec<Module>,
 }
 
+/// Modules references holder.
 #[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct ModulesRef<'a> {
+    /// Vector of modules references.
     pub modules: Vec<&'a Module>,
 }
 
+/// Dependency module source type.
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub enum SourceType {
+    /// Local dependencies.
     Local,
+    /// Git dependencies.
     Git,
+    /// Blockchain dependencies.
     Chain,
 }
 
+/// Module model.
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct Module {
+    /// Module address and name.
     pub name: Rc<ModuleId>,
+    /// Dependency name.
     pub dep_name: Rc<String>,
+    /// Path to the dependencies.
     pub path: Rc<String>,
+    /// Dependency type.
     pub source_type: SourceType,
+    /// Dependency dependencies.
     pub dependencies: HashSet<Rc<ModuleId>>,
 }
 
 impl<'a> Index<'a> {
+    /// Load index form disk.
     pub fn load(ctx: &'a Context) -> Result<Index<'a>, Error> {
         let index_path = ctx.path_for(&ctx.manifest.layout.index);
         if index_path.exists() {
@@ -67,6 +82,7 @@ impl<'a> Index<'a> {
         }
     }
 
+    /// Store index to the disk.
     pub fn store(&self) -> Result<(), Error> {
         let modules: Vec<&Module> = self
             .modules

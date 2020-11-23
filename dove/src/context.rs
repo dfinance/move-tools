@@ -8,16 +8,21 @@ use lang::compiler::address::ProvidedAccountAddress;
 
 /// Project context.
 pub struct Context {
+    /// Project root directory.
     pub project_dir: PathBuf,
+    /// Project manifest.
     pub manifest: DoveToml,
+    /// Move dialect.
     pub dialect: Box<dyn Dialect>,
 }
 
 impl Context {
+    /// Create absolute path in project.
     pub fn path_for<P: AsRef<Path>>(&self, path: P) -> PathBuf {
         self.project_dir.join(path)
     }
 
+    /// Returns project name or default name `project` if the name is not defined.
     pub fn project_name(&self) -> String {
         self.manifest.package.name.clone().unwrap_or_else(|| {
             self.project_dir
@@ -28,6 +33,7 @@ impl Context {
         })
     }
 
+    /// Returns provided account address.
     pub fn account_address(&self) -> Result<ProvidedAccountAddress> {
         self.dialect
             .normalize_account_address(&format!("0x{}", &self.manifest.package.account_address))

@@ -12,7 +12,7 @@ use lang::compiler::dialects::dfinance::DFinanceDialect;
 use lang::compiler::dialects::Dialect;
 use libra::prelude::CORE_CODE_ADDRESS;
 
-/// Movec manifest name.
+/// Dove manifest name.
 pub const MANIFEST: &str = "Dove.toml";
 
 /// Movec manifest.
@@ -140,26 +140,37 @@ impl Default for Layout {
     }
 }
 
+/// Git dependencies.
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct Git {
+    /// Git url.
     pub git: String,
+    /// Branch name.
     pub branch: Option<String>,
+    /// Commit hash.
     pub rev: Option<String>,
 }
 
+/// Local dependencies path.
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
 pub struct DepPath {
+    /// Path to the directory with local dependencies.
     pub path: String,
 }
 
+/// Project dependencies.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Dependencies {
+    /// Vector of project dependencies.
     pub deps: Vec<Dependence>,
 }
 
+/// External dependencies enum.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dependence {
+    /// Git dependency.
     Git(Git),
+    /// Local dependency.
     Path(DepPath),
 }
 

@@ -15,6 +15,8 @@ pub mod loader;
 /// Cache prefix.
 pub const PREFIX: &str = "chain";
 
+/// Returns module path by its identifier.
+/// Downloads a module tree if it is not in the cache.
 pub fn resolve(ctx: &Context, module_id: &ModuleId) -> Result<PathBuf, Error> {
     let dep = make_path(ctx, module_id);
 
@@ -60,16 +62,19 @@ fn load_tree(
     Ok(())
 }
 
+/// Index of chain dependencies.
 pub struct ChainIndex<'a> {
     ctx: &'a Context,
     path: &'a Path,
 }
 
 impl<'a> ChainIndex<'a> {
+    /// Create a new `ChainIndex` instance.
     pub fn new(ctx: &'a Context, path: &'a Path) -> ChainIndex<'a> {
         ChainIndex { ctx, path }
     }
 
+    /// Returns all metadata of this `ChainIndex`.
     pub fn meta(&self) -> Result<Vec<FileMeta>, Error> {
         Ok(vec![source_meta(
             self.path,

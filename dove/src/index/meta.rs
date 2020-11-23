@@ -10,6 +10,7 @@ use std::fs;
 use rand::random;
 use std::rc::Rc;
 
+/// Extracts metadata form source code.
 pub fn source_meta(
     file: &Path,
     address: Option<AccountAddress>,
@@ -48,18 +49,24 @@ pub fn source_meta(
     }
 }
 
+/// Move definition metadata.
 pub struct DefinitionMeta {
+    /// Module identifier.
     pub module_id: ModuleId,
+    /// Module imports.
     pub imports: HashSet<Rc<ModuleId>>,
 }
 
+/// Move file metadata.
 pub struct FileMeta {
+    /// File path.
     pub path: Rc<String>,
+    /// Modules metadata.
     pub meta: Vec<DefinitionMeta>,
 }
 
 impl DefinitionMeta {
-    pub fn from_definition(
+    fn from_definition(
         def: Definition,
         address: Option<AccountAddress>,
     ) -> Result<Vec<DefinitionMeta>> {

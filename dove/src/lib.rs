@@ -1,17 +1,16 @@
 //! Move compiler.
 
-// #![deny(missing_docs)]
+#![deny(missing_docs)]
 
 #[macro_use]
 extern crate anyhow;
 extern crate log;
 
-/// Movec commands handler.
+/// Dove commands handler.
 pub mod cmd;
+/// Dove execution context.
 pub mod context;
 /// Dove modules index.
 pub mod index;
 /// Movec configuration.
 pub mod manifest;
-// /// Move builder.
-// pub mod builder;

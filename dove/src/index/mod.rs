@@ -1,7 +1,9 @@
+/// Move metadata extractor.
 pub mod meta;
-pub mod store;
-
+/// Dependency resolver.
 pub mod resolver;
+/// Index store.
+pub mod store;
 
 use std::path::{PathBuf, Path};
 use std::collections::{HashMap, HashSet};
@@ -20,15 +22,21 @@ use crate::index::resolver::chain;
 use crate::index::resolver::chain::ChainIndex;
 use libra::prelude::*;
 
+/// Modules index.
 pub type ModulesIndex = HashMap<Rc<ModuleId>, HashMap<SourceType, Module>>;
 
+/// Modules index.
 pub struct Index<'a> {
+    /// Modules index.
     pub modules: ModulesIndex,
+    /// Set of dependencies names.
     pub dep_names: HashSet<Rc<String>>,
+    /// Dove context.
     pub ctx: &'a Context,
 }
 
 impl<'a> Index<'a> {
+    /// Build modules index.
     pub fn build(&mut self) -> Result<(), Error> {
         let deps_path = self.ctx.path_for(&self.ctx.manifest.layout.target_deps);
         if deps_path.exists() {
@@ -91,6 +99,7 @@ impl<'a> Index<'a> {
         Ok(())
     }
 
+    /// Returns set of dependencies paths.
     pub fn make_dependency_set<P: AsRef<Path>>(
         &mut self,
         paths: &[P],
@@ -283,6 +292,7 @@ impl<'a> Index<'a> {
     }
 }
 
+/// Creates an iterator from move files
 pub fn move_dir_iter<P: AsRef<Path>>(path: P) -> impl Iterator<Item = DirEntry> {
     WalkDir::new(path)
         .into_iter()
