@@ -30,7 +30,7 @@ pub struct Index<'a> {
     /// Modules index.
     pub modules: ModulesIndex,
     /// Set of dependencies names.
-    pub dep_names: HashSet<Rc<String>>,
+    pub dep_names: HashSet<Rc<str>>,
     /// Dove context.
     pub ctx: &'a Context,
 }
@@ -55,14 +55,9 @@ impl<'a> Index<'a> {
         let mut new_deps = HashSet::new();
         for dir in deps_dir {
             let dir = dir?;
-            let name = Rc::new(
-                dir.file_name()
-                    .to_str()
-                    .ok_or_else(|| {
-                        anyhow!("Failed to convert dependence name:{:?}", dir.file_name())
-                    })?
-                    .to_string(),
-            );
+            let name = Rc::from(dir.file_name().to_str().ok_or_else(|| {
+                anyhow!("Failed to convert dependence name:{:?}", dir.file_name())
+            })?);
 
             let path = dir.path();
             if !self.dep_names.contains(&name) {
@@ -103,7 +98,7 @@ impl<'a> Index<'a> {
     pub fn make_dependency_set<P: AsRef<Path>>(
         &mut self,
         paths: &[P],
-    ) -> Result<HashSet<Rc<String>>, Error> {
+    ) -> Result<HashSet<Rc<str>>, Error> {
         let mut modules = HashSet::new();
         let mut imports = HashSet::new();
 
@@ -154,12 +149,12 @@ impl<'a> Index<'a> {
     fn resolve_imports(
         &mut self,
         imports: &HashSet<Rc<ModuleId>>,
-        deps: &mut HashSet<Rc<String>>,
+        deps: &mut HashSet<Rc<str>>,
     ) -> Result<(), Error> {
         fn resolve<'b>(
             index: &mut Index<'b>,
             import: &Rc<ModuleId>,
-            deps: &mut HashSet<Rc<String>>,
+            deps: &mut HashSet<Rc<str>>,
         ) -> Result<bool, Error> {
             if let Some(module) = index.get_module(&import) {
                 deps.insert(module.path.clone());
@@ -178,7 +173,7 @@ impl<'a> Index<'a> {
                 let name = path
                     .file_name()
                     .and_then(|name| name.to_str())
-                    .map(|name| Rc::new(name.to_owned()))
+                    .map(|name| Rc::from(name.to_owned()))
                     .ok_or_else(|| anyhow!("Failed to get dependencies name :[{:?}]", path))?;
 
                 let files_meta = index.meta()?;
@@ -211,7 +206,7 @@ impl<'a> Index<'a> {
     }
 
     fn index_deps_for<A: AsRef<Path>>(&mut self, path: A) -> Result<(), Error> {
-        let dep_name = Rc::new(
+        let dep_name = Rc::<str>::from(
             path.as_ref()
                 .to_str()
                 .ok_or_else(|| anyhow!("Failed to convert source path:{:?}", path.as_ref()))?
@@ -266,7 +261,7 @@ impl<'a> Index<'a> {
         &mut self,
         f_meta: Vec<FileMeta>,
         src_type: SourceType,
-        dep_name: Rc<String>,
+        dep_name: Rc<str>,
     ) -> Result<(), Error> {
         for file in f_meta {
             for unit in file.meta {

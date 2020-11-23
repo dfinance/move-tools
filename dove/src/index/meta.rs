@@ -30,10 +30,9 @@ pub fn source_meta(
             }
         }
 
-        let path = Rc::new(
+        let path = Rc::from(
             file.to_str()
-                .ok_or_else(|| anyhow!("Failed to convert source path:{:?}", file))?
-                .to_owned(),
+                .ok_or_else(|| anyhow!("Failed to convert source path:{:?}", file))?,
         );
 
         Ok(FileMeta {
@@ -60,7 +59,7 @@ pub struct DefinitionMeta {
 /// Move file metadata.
 pub struct FileMeta {
     /// File path.
-    pub path: Rc<String>,
+    pub path: Rc<str>,
     /// Modules metadata.
     pub meta: Vec<DefinitionMeta>,
 }
@@ -86,7 +85,7 @@ impl DefinitionMeta {
             }
             Definition::Script(script) => Ok(vec![DefinitionMeta::script(
                 &script,
-                address.unwrap_or_else(|| CORE_CODE_ADDRESS),
+                address.unwrap_or(CORE_CODE_ADDRESS),
             )?]),
         }
     }

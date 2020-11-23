@@ -46,11 +46,11 @@ pub trait Cmd {
 
 /// Load dependencies by set of path.
 pub fn load_dependencies(
-    path_set: HashSet<Rc<String>>,
+    path_set: HashSet<Rc<str>>,
 ) -> Result<Vec<MoveFile<'static, 'static>>, Error> {
     path_set
         .iter()
-        .map(|path| path.as_str())
+        .map(|path| path.as_ref())
         .map(MoveFile::load)
         .collect()
 }

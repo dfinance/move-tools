@@ -41,9 +41,9 @@ pub struct Module {
     /// Module address and name.
     pub name: Rc<ModuleId>,
     /// Dependency name.
-    pub dep_name: Rc<String>,
+    pub dep_name: Rc<str>,
     /// Path to the dependencies.
-    pub path: Rc<String>,
+    pub path: Rc<str>,
     /// Dependency type.
     pub source_type: SourceType,
     /// Dependency dependencies.
