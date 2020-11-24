@@ -35,7 +35,8 @@ pub struct Package {
     #[serde(deserialize_with = "from_str")]
     pub account_address: AccountAddress,
     /// Authors list.
-    pub authors: Option<Vec<String>>,
+    #[serde(default)]
+    pub authors: Vec<String>,
     /// dnode base url.
     pub blockchain_api: Option<String>,
     /// Dependency list.
@@ -47,7 +48,7 @@ impl Default for Package {
         Package {
             name: None,
             account_address: CORE_CODE_ADDRESS,
-            authors: None,
+            authors: Default::default(),
             blockchain_api: None,
             dependencies: None,
         }
