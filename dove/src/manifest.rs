@@ -258,7 +258,7 @@ mod test {
         Package {
             name: Some("Foo".to_owned()),
             account_address: CORE_CODE_ADDRESS,
-            authors: None,
+            authors: vec![],
             blockchain_api: None,
             dependencies: Some(Dependencies {
                 deps: vec![
