@@ -56,11 +56,11 @@ impl Default for Package {
 }
 
 fn module_dir() -> String {
-    "src/modules".to_owned()
+    "modules".to_owned()
 }
 
 fn script_dir() -> String {
-    "src/scripts".to_owned()
+    "scripts".to_owned()
 }
 
 fn tests_dir() -> String {
@@ -76,7 +76,7 @@ fn script_output() -> String {
 }
 
 fn target_deps() -> String {
-    "target/.deps".to_owned()
+    "target/.external".to_owned()
 }
 
 fn target() -> String {
