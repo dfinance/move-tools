@@ -84,7 +84,7 @@ fn target() -> String {
 }
 
 fn index() -> String {
-    "Dove.man".to_owned()
+    ".Dove.man".to_owned()
 }
 
 fn code_code_address() -> AccountAddress {
