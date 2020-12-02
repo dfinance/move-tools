@@ -46,12 +46,14 @@ jobs:
           body: |
             __TODO: EDIT ME BEFORE PUBLISH__
 
+            [gha-wf-tools]: ${{ github.event.repository.html_url }}/actions?query=workflow%3A%22Build+Release+Tools%22
+            [gha-wf-ext]: ${{ github.event.repository.html_url }}/actions?query=workflow%3A%22Build+Release+Ext%22
+            [badge-wf-tools]: https://github.com/fzzr-/move-tools/workflows/Build%20Release%20Tools/badge.svg?event=workflow_run (workflow)
+            [badge-wf-ext]: https://github.com/fzzr-/move-tools/workflows/Build%20Release%20Ext/badge.svg?event=workflow_run "workflow"
+
             Wait build completions for:
-            - ${{ github.repository }}
-            - ${{ github.event.repository.html_url }}
-            - ![Build Release Tools](https://github.com/fzzr-/move-tools/workflows/Build%20Release%20Tools/badge.svg?event=workflow_run)
-            - ![Build Release Ext](https://github.com/fzzr-/move-tools/workflows/Build%20Release%20Ext/badge.svg?event=workflow_run)
-            - ![Build Release Ext](${{ github.event.repository.html_url }}/workflows/Build%20Release%20Ext/badge.svg?event=workflow_run)
+            - [![Build Release Tools][badge-wf-tools]][gha-wf-tools]
+            - [![Build Release Ext][badge-wf-ext]][gha-wf-ext]
 
             - - -
 
