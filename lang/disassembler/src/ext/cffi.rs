@@ -37,7 +37,6 @@ pub extern "C" fn version() -> *mut c_char {
 }
 
 #[repr(C)]
-#[no_mangle]
 pub struct Result {
     result: *mut c_char,
     error: *mut c_char,
