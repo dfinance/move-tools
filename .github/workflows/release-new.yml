@@ -30,9 +30,6 @@ jobs:
         env:
           REPO: ${{ github.repository }}
 
-      - name: debug
-        run: echo "${{ toJson(github) }}"
-
       - id: release
         name: Create release ${{ steps.version.outputs.value }}
         uses: actions/create-release@v1
@@ -46,14 +43,14 @@ jobs:
           body: |
             __TODO: EDIT ME BEFORE PUBLISH__
 
-            [gha-wf-tools]: ${{ github.event.repository.html_url }}/actions?query=workflow%3A%22Build+Release+Tools%22
-            [gha-wf-ext]: ${{ github.event.repository.html_url }}/actions?query=workflow%3A%22Build+Release+Ext%22
-            [badge-wf-tools]: https://github.com/fzzr-/move-tools/workflows/Build%20Release%20Tools/badge.svg?event=workflow_run (workflow)
-            [badge-wf-ext]: https://github.com/fzzr-/move-tools/workflows/Build%20Release%20Ext/badge.svg?event=workflow_run "workflow"
+            [link-tools]: ${{ github.event.repository.html_url }}/actions?query=workflow%3A%22Build+Release+Tools%22
+            [link-ext]: ${{ github.event.repository.html_url }}/actions?query=workflow%3A%22Build+Release+Ext%22
+            [badge-tools]: ${{ github.event.repository.html_url }}/workflows/.github/workflows/release-tools.yml/badge.svg?event=workflow_run (tools workflow)
+            [badge-ext]: ${{ github.event.repository.html_url }}/workflows/.github/workflows/release-ext.yml/badge.svg?event=workflow_run "ext workflow"
 
             Wait build completions for:
-            - [![Build Release Tools][badge-wf-tools]][gha-wf-tools]
-            - [![Build Release Ext][badge-wf-ext]][gha-wf-ext]
+            - [![Build Release Tools][badge-tools]][link-tools]
+            - [![Build Release Ext][badge-ext]][link-ext]
 
             - - -
 
