@@ -45,6 +45,18 @@ jobs:
           release_name: ${{ github.ref }}
           body: |
             __TODO: EDIT ME BEFORE PUBLISH__
+
+            Wait build completions for:
+            - ${{ github.repository }}
+            - ${{ github.event.repository.html_url }}
+            - ![Build Release Tools](https://github.com/fzzr-/move-tools/workflows/Build%20Release%20Tools/badge.svg?event=workflow_run)
+            - ![Build Release Ext](https://github.com/fzzr-/move-tools/workflows/Build%20Release%20Ext/badge.svg?event=workflow_run)
+            - ![Build Release Ext](${{ github.event.repository.html_url }}/workflows/Build%20Release%20Ext/badge.svg?event=workflow_run)
+
+            - - -
+
+            ### Changelog
+
             ${{ steps.changelog.outputs.changelog }}
 
       - name: Save release assets url for other workflows
