@@ -45,10 +45,10 @@ jobs:
 
             [link-tools]: ${{ github.event.repository.html_url }}/actions?query=workflow%3A%22Build+Release+Tools%22
             [link-ext]: ${{ github.event.repository.html_url }}/actions?query=workflow%3A%22Build+Release+Ext%22
-            [badge-tools]: ${{ github.event.repository.html_url }}/workflows/.github/workflows/release-tools.yml/badge.svg?event=workflow_run (tools workflow)
-            [badge-ext]: ${{ github.event.repository.html_url }}/workflows/.github/workflows/release-ext.yml/badge.svg?event=workflow_run "ext workflow"
+            [badge-tools]: ${{ github.event.repository.html_url }}/workflows/Build%20Release%20Tools/badge.svg?event=workflow_run (tools workflow)
+            [badge-ext]: ${{ github.event.repository.html_url }}/workflows/Build%20Release%20Ext/badge.svg?event=workflow_run "ext workflow"
 
-            Wait build completions for:
+            __Please wait build completions for:__
             - [![Build Release Tools][badge-tools]][link-tools]
             - [![Build Release Ext][badge-ext]][link-ext]
 
