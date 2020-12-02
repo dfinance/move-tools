@@ -30,6 +30,9 @@ jobs:
         env:
           REPO: ${{ github.repository }}
 
+      - name: debug
+        run: echo "${{ toJson(github) }}"
+
       - id: release
         name: Create release ${{ steps.version.outputs.value }}
         uses: actions/create-release@v1
