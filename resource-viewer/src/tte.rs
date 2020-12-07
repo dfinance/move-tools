@@ -2,7 +2,10 @@ use std::str::FromStr;
 
 use anyhow::{Result, Error, bail};
 
-use libra::{compiler::{ModuleAccess_, ModuleIdent_, Type, Type_}, vm::StructTag};
+use libra::{
+    compiler::{ModuleAccess_, ModuleIdent_, Type, Type_},
+    vm::StructTag,
+};
 use libra::move_lang::parser::lexer::{Lexer, Tok};
 use libra::move_lang::parser::syntax::{parse_num, parse_type};
 use libra::account::Identifier;
