@@ -98,7 +98,7 @@ fn run() -> Result<(), Error> {
             let key = ResourceKey::new(addr, st.clone());
             let res = net::get_resource(&key, &host);
             res.map(|bytes| {
-                if bytes.len() > 0 {
+                if !bytes.is_empty() {
                     let client = net::client::DnodeRestClient::new(host);
 
                     // Internally produce FatStructType (with layout) for StructTag by
@@ -132,7 +132,7 @@ fn run() -> Result<(), Error> {
             Err(anyhow!(
                 "Err: unsupported root type Vec<{}>{:?}",
                 tt,
-                index.map(|v| [v]).unwrap_or(Default::default())
+                index.map(|v| [v]).unwrap_or_default()
             ))
         }
 

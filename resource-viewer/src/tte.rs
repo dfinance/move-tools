@@ -71,7 +71,7 @@ fn unwrap_spanned_ty(ty: Type) -> Result<TypeTag, Error> {
                             name: Identifier::new(struct_name.value)?,
                             type_params: ty_params
                                 .into_iter()
-                                .map(|ty| unwrap_spanned_ty_(ty, Some(this.clone())))
+                                .map(|ty| unwrap_spanned_ty_(ty, Some(this)))
                                 .map(|res| match res {
                                     Ok(st) => st,
                                     Err(err) => panic!("{:?}", err),
@@ -156,7 +156,7 @@ mod tests {
         inputs
             .iter()
             .cloned()
-            .map(|inp| (inp.clone(), parse(inp)))
+            .map(|inp| (inp, parse(inp)))
             .for_each(|(inp, res)| {
                 assert!(res.is_ok(), "failed on '{}'", inp);
                 println!("{:?}", res.unwrap());

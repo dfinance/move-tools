@@ -57,7 +57,7 @@ pub mod client {
     impl RemoteCache for DnodeRestClient {
         fn get_module(&self, id: &ModuleId) -> VMResult<Option<Vec<u8>>> {
             let res = get_module(id, &self.uri).ok();
-            if res.is_some() && res.as_ref().unwrap().len() == 0 {
+            if res.is_some() && res.as_ref().unwrap().is_empty() {
                 error!("Err: empty module for {}", id);
             }
             Ok(res)
@@ -70,7 +70,7 @@ pub mod client {
         ) -> PartialVMResult<Option<Vec<u8>>> {
             let key = ResourceKey::new(*addr, tag.to_owned());
             let res = get_resource(&key, &self.uri).ok();
-            if res.is_some() && res.as_ref().unwrap().len() == 0 {
+            if res.is_some() && res.as_ref().unwrap().is_empty() {
                 error!("Err: empty resource for {:?}", key);
             }
             Ok(res)

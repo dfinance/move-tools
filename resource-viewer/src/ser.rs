@@ -67,14 +67,14 @@ mod vec_annotated_move_value {
     use serde::{Serialize, Serializer};
     use schemars::JsonSchema;
 
-    pub fn serialize<S>(vec: &Vec<AnnotatedMoveValue>, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn serialize<S>(vec: &[AnnotatedMoveValue], serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         #[derive(Serialize, JsonSchema)]
         struct Helper<'a>(#[serde(with = "AnnotatedMoveValueExt")] &'a AnnotatedMoveValue);
 
-        vec.into_iter()
+        vec.iter()
             .map(Helper)
             .collect::<Vec<_>>()
             .serialize(serializer)
@@ -88,7 +88,7 @@ mod vec_annotated_move_value_mapped {
     use schemars::JsonSchema;
 
     pub fn serialize<S>(
-        vec: &Vec<(Identifier, AnnotatedMoveValue)>,
+        vec: &[(Identifier, AnnotatedMoveValue)],
         serializer: S,
     ) -> Result<S::Ok, S::Error>
     where
@@ -102,7 +102,7 @@ mod vec_annotated_move_value_mapped {
             value: &'a AnnotatedMoveValue,
         }
 
-        vec.into_iter()
+        vec.iter()
             .map(|(id, value)| Helper { id, value })
             .collect::<Vec<_>>()
             .serialize(serializer)
