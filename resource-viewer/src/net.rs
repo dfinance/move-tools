@@ -1,14 +1,10 @@
 use http::Uri;
 use libra::prelude::*;
 use anyhow::Result;
-use dove::index::resolver::chain::loader::{self, *};
 use move_core_types::language_storage::StructTag;
-
-pub use loader::RestBytecodeLoader;
+use serde::{Serialize, Deserialize};
 
 pub fn get_module<'a, T: Into<&'a Uri>>(module_id: &ModuleId, url: T) -> Result<Vec<u8>> {
-    // let loader = RestBytecodeLoader::new(host_url());
-    // loader.load(&module_id)
     let path = AccessPath::code_access_path(module_id);
     let url = format!(
         "{base_url}vm/data/{address}/{path}",
@@ -32,7 +28,6 @@ pub fn get_module<'a, T: Into<&'a Uri>>(module_id: &ModuleId, url: T) -> Result<
 }
 
 pub fn get_resource<'a, T: Into<&'a Uri>>(res: &ResourceKey, url: T) -> Result<Vec<u8>> {
-    // resource_access_path
     let path = AccessPath::resource_access_path(res);
     let url = format!(
         "{base_url}vm/data/{address}/{path}",
@@ -93,4 +88,25 @@ impl RemoteCache for DnodeRestClient {
         }
         Ok(res)
     }
+}
+
+/// Api response.
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+pub struct LoaderResponse {
+    /// Result.
+    pub result: Response,
+}
+
+/// Success response.
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+pub struct Response {
+    /// Hex encoded bytecode.
+    pub value: String,
+}
+
+///Error response.
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+pub struct LoaderErrorResponse {
+    /// Error message.
+    pub error: String,
 }
