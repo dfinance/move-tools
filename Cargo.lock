@@ -766,6 +766,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "dnode-rest-client"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dfibra",
+ "hex",
+ "http",
+ "log",
+ "reqwest",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "docgen"
 version = "0.1.0"
 source = "git+https://github.com/dfinance/libra.git?branch=release-1.0#6c97f98a43d72eaa0ce06788b1466ac085525447"
@@ -2520,6 +2534,7 @@ dependencies = [
  "anyhow",
  "clap 3.0.0-beta.2",
  "dfibra",
+ "dnode-rest-client",
  "env_logger 0.8.2",
  "git-hash",
  "hex",
@@ -2527,7 +2542,6 @@ dependencies = [
  "lang",
  "log",
  "move-compat",
- "move-core-types 0.1.0 (git+https://github.com/dfinance/libra.git?branch=release-1.0)",
  "reqwest",
  "resource-viewer",
  "schemars",

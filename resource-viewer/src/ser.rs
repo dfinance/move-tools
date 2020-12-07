@@ -1,6 +1,8 @@
-use libra::prelude::*;
+use libra::{
+    prelude::*,
+    vm::{StructTag},
+};
 use libra::account::Identifier;
-use move_core_types::language_storage::StructTag;
 use rv::{AnnotatedMoveStruct, AnnotatedMoveValue};
 use serde::Serialize;
 use schemars::{JsonSchema, schema_for};
@@ -115,7 +117,7 @@ mod schema_support {
     };
 
     #[derive(Serialize, JsonSchema)]
-    #[serde(remote = "move_core_types::language_storage::StructTag")]
+    #[serde(remote = "StructTag")]
     pub struct StructTagExt {
         #[serde(with = "AccountAddressExt")]
         pub address: AccountAddress,
@@ -128,7 +130,7 @@ mod schema_support {
     }
 
     #[derive(Serialize, JsonSchema)]
-    #[serde(remote = "move_core_types::language_storage::TypeTag")]
+    #[serde(remote = "TypeTag")]
     pub enum TypeTagExt {
         Bool,
         U8,

@@ -16,8 +16,8 @@ use http::Uri;
 use clap::Clap;
 use libra::prelude::*;
 use lang::compiler::bech32::{bech32_into_libra, HRP};
+use dnclient::blocking as net;
 
-mod net;
 mod ser;
 mod tte;
 
@@ -99,7 +99,7 @@ fn run() -> Result<(), Error> {
             let res = net::get_resource(&key, &host);
             res.map(|bytes| {
                 if bytes.len() > 0 {
-                    let client = net::DnodeRestClient::new(host);
+                    let client = net::client::DnodeRestClient::new(host);
 
                     // Internally produce FatStructType (with layout) for StructTag by
                     // resolving & de-.. entire deps-chain.
