@@ -4,7 +4,7 @@ use anyhow::{Result, Error, bail};
 
 use libra::compiler::{ModuleAccess_, ModuleIdent_, Type, Type_};
 use libra::move_lang::parser::lexer::{Lexer, Tok};
-use libra::move_lang::parser::syntax::*;
+use libra::move_lang::parser::syntax::{parse_num, parse_type};
 use libra::account::Identifier;
 use libra::prelude::*;
 use move_core_types::language_storage::StructTag;
