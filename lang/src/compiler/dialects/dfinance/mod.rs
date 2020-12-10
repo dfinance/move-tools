@@ -21,7 +21,7 @@ pub struct DFinanceDialect;
 
 impl Dialect for DFinanceDialect {
     fn name(&self) -> &str {
-        "dfinance"
+        "dfinance"  
     }
 
     fn normalize_account_address(&self, addr: &str) -> Result<ProvidedAccountAddress> {
