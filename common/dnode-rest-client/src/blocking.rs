@@ -9,7 +9,7 @@ pub struct BytesForBlock(Vec<u8>, Block);
 
 impl BytesForBlock {
     pub fn block(&self) -> u128 {
-        self.1.clone()
+        self.1
     }
 
     #[inline]
@@ -20,7 +20,7 @@ impl BytesForBlock {
         &self.0
     }
 
-    pub fn to_bytes(self) -> Vec<u8> {
+    pub fn into_bytes(self) -> Vec<u8> {
         self.0
     }
 }
