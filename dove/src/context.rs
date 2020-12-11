@@ -1,9 +1,9 @@
 use std::path::{PathBuf, Path};
 use crate::manifest::{DoveToml, MANIFEST, read_manifest};
+use std::str::FromStr;
 use anyhow::{Result, anyhow};
 use std::env;
-use lang::compiler::dialects::Dialect;
-use lang::compiler::dialects::dfinance::DFinanceDialect;
+use lang::compiler::dialects::{Dialect, DialectName};
 use lang::compiler::address::ProvidedAccountAddress;
 
 /// Project context.
@@ -43,10 +43,15 @@ impl Context {
 /// Create a new context for the current directory.
 pub fn create_context() -> Result<Context> {
     let project_dir = env::current_dir()?;
+    let manifest = DoveToml::default();
+
+    let dialect_name = manifest.package.dialect.clone().unwrap_or_else(|| String::from("dfinance"));
+    let dialect = DialectName::from_str(&dialect_name)?;
+
     Ok(Context {
         project_dir,
-        manifest: DoveToml::default(),
-        dialect: Box::new(DFinanceDialect::default()),
+        manifest,
+        dialect: dialect.get_dialect(),
     })
 }
 
@@ -55,10 +60,13 @@ pub fn get_context() -> Result<Context> {
     let project_dir = env::current_dir()?;
     let manifest = load_manifest(&project_dir)?;
 
+    let dialect_name = manifest.package.dialect.clone().unwrap_or_else(|| String::from("dfinance"));
+    let dialect = DialectName::from_str(&dialect_name)?;
+
     Ok(Context {
         project_dir,
         manifest,
-        dialect: Box::new(DFinanceDialect::default()),
+        dialect: dialect.get_dialect(),
     })
 }
 

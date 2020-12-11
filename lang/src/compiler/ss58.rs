@@ -16,7 +16,6 @@ lazy_static! {
     .unwrap();
 }
 
-// Generate blake2 256 hash (we use only 2).
 fn ss58hash(data: &[u8]) -> blake2_rfc::blake2b::Blake2bResult {
 	let mut context = blake2_rfc::blake2b::Blake2b::new(64);
 	context.update(SS58_PREFIX);
@@ -24,20 +23,18 @@ fn ss58hash(data: &[u8]) -> blake2_rfc::blake2b::Blake2bResult {
 	context.finalize()
 }
 
-// Address is 1 byte (account_type) + 32 bytes (public key) + 2 bytes (checksum).
-// We reserve 1 additional byte for account_type for future.
 pub fn ss58_to_libra(ss58: &str) -> Result<String> {
     let bs58 = match ss58.from_base58() {
         Ok(bs58) => bs58,
         Err(_) => return Err(anyhow!("Wrong base58"))
     };
     ensure!(bs58.len() == PUB_KEY_LENGTH+3, format!("Address length must be equal {} bytes", PUB_KEY_LENGTH+3));
-    let mut addr = [0; 34];
+    let mut addr = [0; 16];
     if bs58[PUB_KEY_LENGTH + 1..PUB_KEY_LENGTH + 3] != ss58hash(&bs58[0..PUB_KEY_LENGTH + 1]).as_bytes()[0..2] {
         return Err(anyhow!("Wrong address checksum"))
     }
-    addr[..2].copy_from_slice(&[bs58[0], 0]);
-    addr[2..].copy_from_slice(&bs58[1..PUB_KEY_LENGTH+1]);
+    //addr[..2].copy_from_slice(&[bs58[0], 0]);
+    addr.copy_from_slice(&bs58[1..PUB_KEY_LENGTH/2+1]);
     Ok(format!("0x{}", hex::encode_upper(addr).to_string()))
 }
 

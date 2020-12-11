@@ -41,6 +41,8 @@ pub struct Package {
     pub blockchain_api: Option<String>,
     /// Dependency list.
     pub dependencies: Option<Dependencies>,
+    /// Dialect
+    pub dialect: Option<String>,
 }
 
 impl Default for Package {
@@ -51,6 +53,7 @@ impl Default for Package {
             authors: Default::default(),
             blockchain_api: None,
             dependencies: None,
+            dialect: None,
         }
     }
 }
@@ -277,6 +280,7 @@ mod test {
                     }),
                 ],
             }),
+            dialect: Some("dfinance".to_owned()),
         }
     }
 
