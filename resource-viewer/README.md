@@ -1,39 +1,34 @@
 # Move Resource Viewer
 
-Console tool that gets resources from chain (by [dnode][]) and represents them in json or human-readable format.
-Output describes entire structure, contains actual values.
+Move Resource Viewer is a tool to query [LCS](https://github.com/librastartup/libra-canonical-serialization/blob/master/DOCUMENTATION.md) resources data from blockchain nodes storage (i.e. [dnode](http://github.com/dfinance/dnode) or [diem](https://github.com/diem/diem)) and represent them in JSON or human readable format.
 
+## How does it works?
 
-## What does it do?
-
-1. Makes request to database client (node) for specified query (address + resource type)
-2. Restores full type layout of the requested resource asking node
-3. Returns full type layout annotated with values which is actual for current state.
-
+1. The viewer makes a request to the blockchain node by a sending specific query (address + resource type).
+2. The viewer restores resources using response data and type layout.
 
 ## Installation
 
-Prerequisites:
-- [Rust][] toolchain, the easiest way to get it is to use [Rustup][]
+Requirements:
+- [Rust][] toolchain, the easiest way to get it is to use [Rustup][].
 
-To install using cargo run the following commands:
+Using cargo:
 
 ```bash
 cargo install --git https://github.com/dfinance/move-tools.git move-resource-viewer
 ```
 
-
 [Rust]: https://www.rust-lang.org
 [Rustup]: https://rustup.rs
 
-
-
 ## Usage example
+
+Query the user's ETH balance:
 
 ```bash
 move-resource-viewer -a wallet1n9w22mvaq7uuswr4j53usd0spd2mznphq3q3zp \
                           -q "0x1::Account::Balance<0x1::ETH::T>" \
-                          --api="[https://rest.demo2.dfinance.co](https://rest.demo2.dfinance.co/)" \
+                          --api="https://rest.testnet.dfinance.co" \
                           -o=output.json
 # optional block number:  --height 42
 
@@ -45,12 +40,12 @@ move-resource-viewer -a wallet1n9w22mvaq7uuswr4j53usd0spd2mznphq3q3zp \
 
 ### Input parameters
 
-- `-a` / `--account` can be in DFinance [bech32][] or hex `0x…{16-20 bytes}` encoding formats
+- `-a` / `--account` can be in Dfinance [bech32][] or hex `0x…{16-20 bytes}` encoding formats
 - `-q` / `--query` resource type-path, e.g.:
     - `0x1::Account::Balance<0x1::XFI::T>`
     - `0x1::Account::Balance<0x1::Coins::ETH>`
     - In general: `0xDEADBEEF::Module::Struct< 0xBADBEEF::Mod::Struct<...>, ... >`
-    - Inner address can be omitted, it is inherited by parent:
+    - Inner address can be omitted, it's inherited by parent:
 	   `0xDEADBEEF::Module::Struct<Mod::Struct>` expands to `0xDEADBEEF::Module::Struct<0xDEADBEEF::Mod::Struct>`
     - Query can ends with index `[42]` for `vec`-resources
 - Output options:
@@ -60,12 +55,8 @@ move-resource-viewer -a wallet1n9w22mvaq7uuswr4j53usd0spd2mznphq3q3zp \
 
 For more info check out `--help`.
 
-
-
 [dnode]: https://github.com/dfinance/dnode
 [bech32]: https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki
-
-
 
 ### Output
 
@@ -74,7 +65,7 @@ Two output formats supported:
 - Move-like text
 - JSON
 
-_Structure of the output in JSON is described in the scheme, which can be obtained by calling with the `--json-schema` parameter._
+_The structure of the output in JSON is described in the scheme, which can be obtained by calling with the `--json-schema` parameter._
 
 #### `Move`-like example:
 
@@ -87,9 +78,6 @@ resource 00000000::Account::Balance<00000000::Coins::BTC> {
 ```
 
 #### `JSON` example:
-
-<details>
-  <summary>full json output</summary>
 
 ```json
 {
@@ -144,5 +132,3 @@ resource 00000000::Account::Balance<00000000::Coins::BTC> {
   ]
 }
 ```
-
-</details>
