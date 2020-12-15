@@ -1,5 +1,5 @@
 use std::path::{PathBuf, Path};
-use crate::manifest::{Git, MANIFEST, read_manifest};
+use crate::manifest::{Git, MANIFEST, read_manifest, default_dialect};
 use crate::context::Context;
 use git2::build::RepoBuilder;
 use tiny_keccak::{Sha3, Hasher};
@@ -73,7 +73,7 @@ fn get_dep_address(path: &Path) -> Result<Option<AccountAddress>, Error> {
     if manifest.exists() {
         let manifest = read_manifest(&manifest)?;
         
-        let dialect_name = manifest.package.dialect.clone().unwrap_or_else(|| String::from("dfinance"));
+        let dialect_name = manifest.package.dialect.clone().unwrap_or_else(|| default_dialect());
         let dialect = DialectName::from_str(&dialect_name)?.get_dialect();
 
         let provided_account_address = dialect.normalize_account_address(&manifest.package.account_address.clone().unwrap())?;

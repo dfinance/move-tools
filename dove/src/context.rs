@@ -1,5 +1,5 @@
 use std::path::{PathBuf, Path};
-use crate::manifest::{DoveToml, MANIFEST, read_manifest};
+use crate::manifest::{DoveToml, MANIFEST, read_manifest, default_dialect};
 use std::str::FromStr;
 use anyhow::{Result, anyhow};
 use std::env;
@@ -45,7 +45,7 @@ pub fn create_context() -> Result<Context> {
     let project_dir = env::current_dir()?;
     let manifest = DoveToml::default();
 
-    let dialect_name = manifest.package.dialect.clone().unwrap_or_else(|| String::from("dfinance"));
+    let dialect_name = manifest.package.dialect.clone().unwrap_or_else(|| default_dialect());
     let dialect = DialectName::from_str(&dialect_name)?;
 
     Ok(Context {
@@ -60,7 +60,7 @@ pub fn get_context() -> Result<Context> {
     let project_dir = env::current_dir()?;
     let manifest = load_manifest(&project_dir)?;
 
-    let dialect_name = manifest.package.dialect.clone().unwrap_or_else(|| String::from("dfinance"));
+    let dialect_name = manifest.package.dialect.clone().unwrap_or_else(|| default_dialect());
     let dialect = DialectName::from_str(&dialect_name)?;
 
     Ok(Context {

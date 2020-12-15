@@ -56,7 +56,7 @@ impl Default for Package {
 }
 
 fn dialect() -> Option<String> {
-    Some("dfinance".to_owned())
+    Some(default_dialect())
 }
 
 fn module_dir() -> String {
@@ -241,6 +241,11 @@ impl Serialize for Dependencies {
 /// Reads the manifest by path.
 pub fn read_manifest(path: &Path) -> Result<DoveToml, Error> {
     Ok(toml::from_str(&fs::read_to_string(path)?)?)
+}
+
+/// Default dialect name (dfinance).
+pub fn default_dialect() -> String {
+    "dfinance".to_owned()
 }
 
 #[cfg(test)]
