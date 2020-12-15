@@ -29,12 +29,12 @@ pub fn ss58_to_libra(ss58: &str) -> Result<String> {
         Err(_) => return Err(anyhow!("Wrong base58"))
     };
     ensure!(bs58.len() == PUB_KEY_LENGTH+3, format!("Address length must be equal {} bytes", PUB_KEY_LENGTH+3));
-    let mut addr = [0; 16];
+    let mut addr = [0; 34];
     if bs58[PUB_KEY_LENGTH + 1..PUB_KEY_LENGTH + 3] != ss58hash(&bs58[0..PUB_KEY_LENGTH + 1]).as_bytes()[0..2] {
         return Err(anyhow!("Wrong address checksum"))
     }
-    //addr[..2].copy_from_slice(&[bs58[0], 0]);
-    addr.copy_from_slice(&bs58[1..PUB_KEY_LENGTH/2+1]);
+    addr[..2].copy_from_slice(&[bs58[0], 0]);
+    addr[2..].copy_from_slice(&bs58[1..PUB_KEY_LENGTH/2+1]);
     Ok(format!("0x{}", hex::encode_upper(addr).to_string()))
 }
 
