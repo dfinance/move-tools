@@ -32,7 +32,7 @@ pub struct New {
         long = "dialect",
         short = "d"
     )]
-    dialect: Option<String>
+    dialect: Option<String>,
 }
 
 impl Cmd for New {

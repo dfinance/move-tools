@@ -1,7 +1,7 @@
 pub mod dfinance;
 pub mod libra;
-pub mod polkadot;
 pub mod line_endings;
+pub mod polkadot;
 
 use anyhow::Result;
 use move_core_types::gas_schedule::CostTable;
@@ -27,7 +27,7 @@ pub trait Dialect {
 pub enum DialectName {
     Libra,
     DFinance,
-    Polkadot
+    Polkadot,
 }
 
 impl DialectName {

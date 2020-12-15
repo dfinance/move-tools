@@ -72,12 +72,17 @@ fn get_dep_address(path: &Path) -> Result<Option<AccountAddress>, Error> {
     let manifest = path.join(MANIFEST);
     if manifest.exists() {
         let manifest = read_manifest(&manifest)?;
-        
-        let dialect_name = manifest.package.dialect.clone().unwrap_or_else(|| default_dialect());
+
+        let dialect_name = manifest
+            .package
+            .dialect
+            .clone()
+            .unwrap_or_else(|| default_dialect());
         let dialect = DialectName::from_str(&dialect_name)?.get_dialect();
 
-        let provided_account_address = dialect.normalize_account_address(&manifest.package.account_address.clone().unwrap())?;
-        
+        let provided_account_address = dialect
+            .normalize_account_address(&manifest.package.account_address.clone().unwrap())?;
+
         Ok(Some(provided_account_address.as_account_address()))
     } else {
         Ok(None)

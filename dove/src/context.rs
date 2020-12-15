@@ -35,7 +35,7 @@ impl Context {
 
     /// Returns provided account address.
     pub fn account_address(&self) -> Result<ProvidedAccountAddress> {
-        let acc_addr = self.manifest.package.account_address.clone().unwrap(); 
+        let acc_addr = self.manifest.package.account_address.clone().unwrap();
         self.dialect.normalize_account_address(&acc_addr)
     }
 }
@@ -45,7 +45,11 @@ pub fn create_context() -> Result<Context> {
     let project_dir = env::current_dir()?;
     let manifest = DoveToml::default();
 
-    let dialect_name = manifest.package.dialect.clone().unwrap_or_else(|| default_dialect());
+    let dialect_name = manifest
+        .package
+        .dialect
+        .clone()
+        .unwrap_or_else(|| default_dialect());
     let dialect = DialectName::from_str(&dialect_name)?;
 
     Ok(Context {
@@ -60,7 +64,11 @@ pub fn get_context() -> Result<Context> {
     let project_dir = env::current_dir()?;
     let manifest = load_manifest(&project_dir)?;
 
-    let dialect_name = manifest.package.dialect.clone().unwrap_or_else(|| default_dialect());
+    let dialect_name = manifest
+        .package
+        .dialect
+        .clone()
+        .unwrap_or_else(|| default_dialect());
     let dialect = DialectName::from_str(&dialect_name)?;
 
     Ok(Context {

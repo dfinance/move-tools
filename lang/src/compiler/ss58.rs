@@ -6,35 +6,37 @@ use regex::Regex;
 use blake2_rfc;
 use crate::compiler::source_map::FileOffsetMap;
 
-const SS58_PREFIX: &[u8]    = b"SS58PRE";
+const SS58_PREFIX: &[u8] = b"SS58PRE";
 const PUB_KEY_LENGTH: usize = 32;
 
 lazy_static! {
-    static ref SS58_REGEX: Regex = Regex::new(
-        r#"[1-9A-HJ-NP-Za-km-z]{40,}"#,
-    )
-    .unwrap();
+    static ref SS58_REGEX: Regex = Regex::new(r#"[1-9A-HJ-NP-Za-km-z]{40,}"#,).unwrap();
 }
 
 fn ss58hash(data: &[u8]) -> blake2_rfc::blake2b::Blake2bResult {
-	let mut context = blake2_rfc::blake2b::Blake2b::new(64);
-	context.update(SS58_PREFIX);
-	context.update(data);
-	context.finalize()
+    let mut context = blake2_rfc::blake2b::Blake2b::new(64);
+    context.update(SS58_PREFIX);
+    context.update(data);
+    context.finalize()
 }
 
 pub fn ss58_to_libra(ss58: &str) -> Result<String> {
     let bs58 = match ss58.from_base58() {
         Ok(bs58) => bs58,
-        Err(_) => return Err(anyhow!("Wrong base58"))
+        Err(_) => return Err(anyhow!("Wrong base58")),
     };
-    ensure!(bs58.len() == PUB_KEY_LENGTH+3, format!("Address length must be equal {} bytes", PUB_KEY_LENGTH+3));
+    ensure!(
+        bs58.len() == PUB_KEY_LENGTH + 3,
+        format!("Address length must be equal {} bytes", PUB_KEY_LENGTH + 3)
+    );
     let mut addr = [0; 34];
-    if bs58[PUB_KEY_LENGTH + 1..PUB_KEY_LENGTH + 3] != ss58hash(&bs58[0..PUB_KEY_LENGTH + 1]).as_bytes()[0..2] {
-        return Err(anyhow!("Wrong address checksum"))
+    if bs58[PUB_KEY_LENGTH + 1..PUB_KEY_LENGTH + 3]
+        != ss58hash(&bs58[0..PUB_KEY_LENGTH + 1]).as_bytes()[0..2]
+    {
+        return Err(anyhow!("Wrong address checksum"));
     }
     addr[..2].copy_from_slice(&[bs58[0], 0]);
-    addr[2..].copy_from_slice(&bs58[1..PUB_KEY_LENGTH/2+1]);
+    addr[2..].copy_from_slice(&bs58[1..PUB_KEY_LENGTH / 2 + 1]);
     Ok(format!("0x{}", hex::encode_upper(addr).to_string()))
 }
 

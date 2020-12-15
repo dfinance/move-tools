@@ -31,12 +31,16 @@ pub struct Init {
         long = "dialect",
         short = "d"
     )]
-    dialect: Option<String>
+    dialect: Option<String>,
 }
 
 impl Init {
     /// Creates a new Init command.
-    pub fn new(repository: Option<Uri>, address: Option<String>, dialect: Option<String>) -> Init {
+    pub fn new(
+        repository: Option<Uri>,
+        address: Option<String>,
+        dialect: Option<String>,
+    ) -> Init {
         Init {
             repository,
             address,

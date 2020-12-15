@@ -13,21 +13,28 @@ pub struct PolkadotDialect;
 
 impl Dialect for PolkadotDialect {
     fn name(&self) -> &str {
-        "polkadot"  
+        "polkadot"
     }
 
     fn normalize_account_address(&self, addr: &str) -> Result<ProvidedAccountAddress> {
         let address_res = if let Ok(libra_addr) = ss58_to_libra(addr) {
-            Ok(ProvidedAccountAddress::new(addr.to_string(), addr.to_string(), libra_addr))
+            Ok(ProvidedAccountAddress::new(
+                addr.to_string(),
+                addr.to_string(),
+                libra_addr,
+            ))
         } else if addr.starts_with("0x") {
             AccountAddress::from_hex_literal(addr).map(|address| {
                 let lowered_addr = format!("0x{}", address);
                 ProvidedAccountAddress::new(addr.to_string(), lowered_addr.clone(), lowered_addr)
             })
         } else {
-            Err(anyhow::anyhow!("Address is not valid libra or polkadot address"))
+            Err(anyhow::anyhow!(
+                "Address is not valid libra or polkadot address"
+            ))
         };
-        address_res.with_context(|| format!("Address {:?} is not a valid libra/polkadot address", addr))
+        address_res
+            .with_context(|| format!("Address {:?} is not a valid libra/polkadot address", addr))
     }
 
     fn cost_table(&self) -> CostTable {
