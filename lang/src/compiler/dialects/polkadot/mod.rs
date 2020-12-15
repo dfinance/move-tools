@@ -25,9 +25,9 @@ impl Dialect for PolkadotDialect {
                 ProvidedAccountAddress::new(addr.to_string(), lowered_addr.clone(), lowered_addr)
             })
         } else {
-            Err(anyhow::anyhow!("Does not start with either wallet1 or 0x"))
+            Err(anyhow::anyhow!("Address is not valid libra or polkadot address"))
         };
-        address_res.with_context(|| format!("Address {:?} is not a valid dfinance address", addr))
+        address_res.with_context(|| format!("Address {:?} is not a valid libra/polkadot address", addr))
     }
 
     fn cost_table(&self) -> CostTable {

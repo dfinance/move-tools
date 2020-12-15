@@ -35,8 +35,8 @@ impl Context {
 
     /// Returns provided account address.
     pub fn account_address(&self) -> Result<ProvidedAccountAddress> {
-        self.dialect
-            .normalize_account_address(&format!("0x{}", &self.manifest.package.account_address))
+        let acc_addr = self.manifest.package.account_address.clone().unwrap(); 
+        self.dialect.normalize_account_address(&acc_addr)
     }
 }
 
