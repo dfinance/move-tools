@@ -49,7 +49,7 @@ pub fn create_context() -> Result<Context> {
         .package
         .dialect
         .clone()
-        .unwrap_or_else(|| default_dialect());
+        .unwrap_or_else(default_dialect);
     let dialect = DialectName::from_str(&dialect_name)?;
 
     Ok(Context {
@@ -68,7 +68,7 @@ pub fn get_context() -> Result<Context> {
         .package
         .dialect
         .clone()
-        .unwrap_or_else(|| default_dialect());
+        .unwrap_or_else(default_dialect);
     let dialect = DialectName::from_str(&dialect_name)?;
 
     Ok(Context {

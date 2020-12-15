@@ -1,9 +1,7 @@
 use rust_base58::base58::FromBase58;
-use hex;
 use anyhow::{anyhow, ensure, Result};
 use lazy_static::lazy_static;
 use regex::Regex;
-use blake2_rfc;
 use crate::compiler::source_map::FileOffsetMap;
 
 const SS58_PREFIX: &[u8] = b"SS58PRE";
@@ -37,7 +35,7 @@ pub fn ss58_to_libra(ss58: &str) -> Result<String> {
     }
     addr[..2].copy_from_slice(&[bs58[0], 0]);
     addr[2..].copy_from_slice(&bs58[1..PUB_KEY_LENGTH / 2 + 1]);
-    Ok(format!("0x{}", hex::encode_upper(addr).to_string()))
+    Ok(format!("0x{}", hex::encode_upper(addr)))
 }
 
 pub fn replace_ss58_addresses(source: &str, file_source_map: &mut FileOffsetMap) -> String {
