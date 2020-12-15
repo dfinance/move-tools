@@ -67,7 +67,7 @@ Two output formats supported:
 
 _The structure of the output in JSON is described in the scheme, which can be obtained by calling with the `--json-schema` parameter._
 
-#### `Move`-like example:
+#### Move-like example:
 
 ```rust
 resource 00000000::Account::Balance<00000000::Coins::BTC> {
@@ -77,7 +77,7 @@ resource 00000000::Account::Balance<00000000::Coins::BTC> {
 }
 ```
 
-#### `JSON` example:
+#### JSON example:
 
 ```json
 {
