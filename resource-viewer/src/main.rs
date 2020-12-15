@@ -69,7 +69,9 @@ struct Cfg {
 }
 
 fn main() -> Result<(), Error> {
-    init_logger().map_err(|err| eprintln!("Error: {}", err)).ok();
+    init_logger()
+        .map_err(|err| eprintln!("Error: {}", err))
+        .ok();
     run().map_err(|err| {
         error!("{}", err);
         err
