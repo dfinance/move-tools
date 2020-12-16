@@ -5,7 +5,8 @@ Move Resource Viewer is a tool to query [LCS](https://github.com/librastartup/li
 ## How does it works?
 
 1. The viewer makes a request to the blockchain node by a sending specific query (address + resource type).
-2. The viewer restores resources using response data and type layout.
+2. The viewer send another request to node and query resource type layout.
+3. The viewer restores resources using response data and type layout.
 
 ## Installation
 
