@@ -34,7 +34,7 @@ pub fn ss58_to_libra(ss58: &str) -> Result<String> {
         return Err(anyhow!("Wrong address checksum"));
     }
     addr[..2].copy_from_slice(&[bs58[0], 0]);
-    addr[2..].copy_from_slice(&bs58[1..PUB_KEY_LENGTH / 2 + 1]);
+    addr[2..].copy_from_slice(&bs58[1..PUB_KEY_LENGTH + 1]);
     Ok(format!("0x{}", hex::encode_upper(addr)))
 }
 
@@ -61,4 +61,62 @@ pub fn replace_ss58_addresses(source: &str, file_source_map: &mut FileOffsetMap)
         }
     }
     transformed_source
+}
+
+#[cfg(test)]
+mod test {
+    use crate::compiler::source_map::FileOffsetMap;
+
+    use super::{ss58_to_libra, ss58hash, replace_ss58_addresses};
+    use hex;
+
+    #[test]
+    fn test_ss58_to_libra() {
+        let polka_address = "G7UkJAutjbQyZGRiP8z5bBSBPBJ66JbTKAkFDq3cANwENyX";
+        let libra_address = ss58_to_libra(&polka_address).unwrap();
+
+        assert_eq!(
+            "0x02009C786090E2598AE884FF9D1F01D6A1A9BAF13A9E61F73633A8928F4D80BF7DFE",
+            libra_address
+        );
+    }
+
+    #[test]
+    fn test_ss58hash() {
+        let msg = "hello, world!".as_bytes();
+        let hash = ss58hash(msg).as_bytes().to_vec();
+
+        assert_eq!("656facfcf4f90cce9ec9b65c9185ea75346507c67e25133f5809b442487468a674973f9167193e86bee0c706f6766f7edf638ed3e21ad12c2908ea62924af4d7", hex::encode(hash));
+    }
+
+    #[test]
+    fn test_replace_ss58_addresses() {
+        let source = r"
+            script {
+                use 0x01::Event;
+                use 1exaAg2VJRQbyUBAeXcktChCAqjVP9TUxF3zo23R2T6EGdE::Math;
+
+                fun main(account: &signer, a: u64, b: u64) {
+                    let sum = Math::add(a, b);
+                    Event::emit(account, sum);
+                }
+            }
+        ";
+
+        let res = replace_ss58_addresses(source, &mut FileOffsetMap::default());
+        assert_eq!(
+            r"
+            script {
+                use 0x01::Event;
+                use 0x00001CF326C5AAA5AF9F0E2791E66310FE8F044FAADAF12567EAA0976959D1F7731F::Math;
+
+                fun main(account: &signer, a: u64, b: u64) {
+                    let sum = Math::add(a, b);
+                    Event::emit(account, sum);
+                }
+            }
+        ",
+            res
+        );
+    }
 }
