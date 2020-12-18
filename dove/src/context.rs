@@ -35,7 +35,13 @@ impl Context {
 
     /// Returns provided account address.
     pub fn account_address(&self) -> Result<ProvidedAccountAddress> {
-        let acc_addr = self.manifest.package.account_address.clone().unwrap();
+        let acc_addr = self
+            .manifest
+            .package
+            .account_address
+            .clone()
+            .ok_or(anyhow!("couldn't read account address from manifest"))?;
+
         self.dialect.normalize_account_address(&acc_addr)
     }
 }

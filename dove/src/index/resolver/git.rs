@@ -80,8 +80,13 @@ fn get_dep_address(path: &Path) -> Result<Option<AccountAddress>, Error> {
             .unwrap_or_else(default_dialect);
         let dialect = DialectName::from_str(&dialect_name)?.get_dialect();
 
-        let provided_account_address =
-            dialect.normalize_account_address(&manifest.package.account_address.unwrap())?;
+        let acc_addr = manifest
+            .package
+            .account_address
+            .clone()
+            .ok_or(anyhow!("couldn't read account address from manifest"))?;
+
+        let provided_account_address = dialect.normalize_account_address(&acc_addr)?;
 
         Ok(Some(provided_account_address.as_account_address()))
     } else {

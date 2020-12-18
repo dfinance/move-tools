@@ -42,7 +42,9 @@ pub fn replace_ss58_addresses(source: &str, file_source_map: &mut FileOffsetMap)
     let mut transformed_source = source.to_string();
 
     for mat in SS58_REGEX.captures_iter(source).into_iter() {
-        let item = mat.get(0).unwrap();
+        let item = mat
+            .get(0)
+            .expect("can't extract match from SS58 regex capture");
 
         let orig_address = item.as_str();
         if orig_address.starts_with("0x") {
