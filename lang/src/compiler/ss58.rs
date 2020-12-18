@@ -66,9 +66,7 @@ pub fn replace_ss58_addresses(source: &str, file_source_map: &mut FileOffsetMap)
 #[cfg(test)]
 mod test {
     use crate::compiler::source_map::FileOffsetMap;
-
     use super::{ss58_to_libra, ss58hash, replace_ss58_addresses};
-    use hex;
 
     #[test]
     fn test_ss58_to_libra() {
@@ -83,7 +81,7 @@ mod test {
 
     #[test]
     fn test_ss58hash() {
-        let msg = "hello, world!".as_bytes();
+        let msg = b"hello, world!";
         let hash = ss58hash(msg).as_bytes().to_vec();
 
         assert_eq!("656facfcf4f90cce9ec9b65c9185ea75346507c67e25133f5809b442487468a674973f9167193e86bee0c706f6766f7edf638ed3e21ad12c2908ea62924af4d7", hex::encode(hash));
