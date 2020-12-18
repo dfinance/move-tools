@@ -83,7 +83,7 @@ fn get_dep_address(path: &Path) -> Result<Option<AccountAddress>, Error> {
         let acc_addr = manifest
             .package
             .account_address
-            .ok_or(anyhow!("couldn't read account address from manifest"))?;
+            .ok_or_else(|| anyhow!("couldn't read account address from manifest"))?;
 
         let provided_account_address = dialect.normalize_account_address(&acc_addr)?;
 

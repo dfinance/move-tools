@@ -40,7 +40,7 @@ impl Context {
             .package
             .account_address
             .clone()
-            .ok_or(anyhow!("couldn't read account address from manifest"))?;
+            .ok_or_else(|| anyhow!("couldn't read account address from manifest"))?;
 
         self.dialect.normalize_account_address(&acc_addr)
     }
