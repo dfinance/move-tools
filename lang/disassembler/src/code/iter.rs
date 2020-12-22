@@ -1,4 +1,4 @@
-use crate::libra::file_format::Bytecode;
+use libra::file_format::Bytecode;
 use std::slice::Iter;
 
 /// Bytecode iterator.

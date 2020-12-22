@@ -25,7 +25,7 @@ pub mod rf;
 pub mod unpack;
 
 use crate::Encode;
-use crate::libra::file_format::*;
+use libra::file_format::*;
 use std::fmt::Write;
 use anyhow::Error;
 use crate::code::exp::operators::{BinaryOp, Abort, Not};

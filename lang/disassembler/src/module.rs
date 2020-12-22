@@ -1,7 +1,7 @@
 use crate::structs::StructDef;
 use anyhow::Error;
 use crate::{Encode, INDENT, Config};
-use crate::libra::prelude::*;
+use libra::prelude::*;
 use std::fmt::Write;
 use crate::generics::Generics;
 use crate::imports::Imports;

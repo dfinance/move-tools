@@ -1,6 +1,6 @@
 use crate::code::exp::{Exp, SourceRange};
-use crate::libra::prelude::*;
-use crate::libra::file_format::ConstantPoolIndex;
+use libra::prelude::*;
+use libra::file_format::ConstantPoolIndex;
 use crate::Encode;
 use anyhow::Error;
 use std::fmt::Write;
