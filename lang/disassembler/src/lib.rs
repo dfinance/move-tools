@@ -135,14 +135,14 @@ pub fn write_array<E: Encode, W: Write>(
 #[cfg(test)]
 #[cfg(not(target_arch = "wasm32"))]
 mod tests {
-    use libra::prelude::*;
-    use libra::file_format::*;
     use crate::{disasm_str, Config};
     use lang::builder::{MoveBuilder, Artifacts};
     use lang::compiler::dialects::DialectName;
     use lang::compiler::file::MoveFile;
     use lang::compiler::ConstPool;
     use lang::libra::move_lang::errors::report_errors_to_buffer;
+    use vm::CompiledModule;
+    use vm::file_format::{Bytecode, FunctionDefinition, CodeUnit};
 
     fn compile(source: &str) -> Vec<u8> {
         let _pool = ConstPool::new();

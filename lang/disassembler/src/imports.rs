@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 use std::rc::Rc;
-use libra::prelude::*;
 use crate::Encode;
 use anyhow::Error;
 use std::fmt::Write;
 use crate::unit::UnitAccess;
+use move_core_types::account_address::AccountAddress;
 
 /// Unit imports table.
 #[derive(Debug)]

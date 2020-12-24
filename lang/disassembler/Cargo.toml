@@ -22,7 +22,10 @@ rand = "0.7"
 itertools = "0.9"
 hex = "0.4"
 anyhow = { version = "1.0", default-features = false }
-libra = { package = "dfibra", git = "https://github.com/dfinance/libra.git", branch = "address_version" }
+libra-types = { git = "https://github.com/dfinance/libra.git", branch = "address_version" }
+move-core-types = { git = "https://github.com/dfinance/libra.git", branch = "address_version" }
+lcs = { git = "https://github.com/dfinance/libra.git", branch = "address_version", package = "libra-canonical-serialization" }
+vm = { git = "https://github.com/dfinance/libra.git", branch = "address_version" }
 compat = { path = "../compat", package = "move-compat" }
 git-hash = { path = "../../common/git-hash" }
 
@@ -32,18 +35,23 @@ default = [
 ]
 cffi = []
 libra_address = [
-    "libra/libra_address",
+    "libra-types/libra_address",
+    "move-core-types/libra_address",
+    "vm/libra_address",
     "compat/libra_address",
 ]
 dfinance_address = [
-    "libra/dfinance_address",
+    "libra-types/dfinance_address",
+    "move-core-types/dfinance_address",
+    "vm/dfinance_address",
     "compat/dfinance_address",
 ]
 ps_address = [
-    "libra/ps_address",
+    "libra-types/ps_address",
+    "move-core-types/ps_address",
+    "vm/ps_address",
     "compat/ps_address",
 ]
-
 
 # cli:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

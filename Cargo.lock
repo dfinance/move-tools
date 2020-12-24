@@ -768,13 +768,16 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap 3.0.0-beta.2",
- "dfibra",
  "git-hash",
  "hex",
  "itertools",
  "lang",
+ "libra-canonical-serialization 0.1.0 (git+https://github.com/dfinance/libra.git?branch=address_version)",
+ "libra-types",
  "move-compat",
+ "move-core-types 0.1.0 (git+https://github.com/dfinance/libra.git?branch=address_version)",
  "rand",
+ "vm",
  "wasm-bindgen",
 ]
 
@@ -2332,7 +2335,10 @@ name = "move-compat"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "dfibra",
+ "libra-canonical-serialization 0.1.0 (git+https://github.com/dfinance/libra.git?branch=address_version)",
+ "libra-types",
+ "move-core-types 0.1.0 (git+https://github.com/dfinance/libra.git?branch=address_version)",
+ "vm",
 ]
 
 [[package]]

@@ -1,10 +1,14 @@
-use libra::file_format::*;
-use libra::prelude::*;
+use vm::file_format::*;
 use anyhow::Error;
 use crate::Encode;
 use crate::script::Script as ScriptAst;
 use crate::module::Module as ModuleAst;
 use std::fmt::{Write, Debug};
+use vm::errors::Location;
+use move_core_types::language_storage::{ModuleId, CORE_CODE_ADDRESS};
+use move_core_types::identifier::Identifier;
+use vm::access::{ModuleAccess, ScriptAccess};
+use move_core_types::account_address::AccountAddress;
 
 /// Undefined bytecode abstraction.
 #[derive(Debug)]
