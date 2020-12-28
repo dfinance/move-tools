@@ -30,9 +30,6 @@ compat = { path = "../compat", package = "move-compat" }
 git-hash = { path = "../../common/git-hash" }
 
 [features]
-default = [
-    "dfinance_address"
-]
 cffi = []
 libra_address = [
     "libra-types/libra_address",

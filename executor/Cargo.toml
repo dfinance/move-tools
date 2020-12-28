@@ -21,9 +21,6 @@ lang = { path = "../lang" }
 git-hash = { path = "../common/git-hash" }
 
 [features]
-default = [
-    "dfinance_address"
-]
 libra_address = [
     "libra/libra_address"
 ]

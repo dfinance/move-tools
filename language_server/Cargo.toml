@@ -29,9 +29,6 @@ lang = { path = "../lang" }
 libra = { package = "dfibra", git = "https://github.com/dfinance/libra.git", branch = "address_version" }
 
 [features]
-default = [
-    "dfinance_address"
-]
 libra_address = [
     "lang/libra_address",
     "libra/libra_address",

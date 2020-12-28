@@ -26,9 +26,6 @@ vm = { git = "https://github.com/dfinance/libra.git", branch = "address_version"
 anyhow = "1.0"
 
 [features]
-default = [
-    "dfinance_address"
-]
 libra_address = [
     "libra-types/libra_address",
     "move-core-types/libra_address",
