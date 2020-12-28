@@ -13,8 +13,8 @@ publish = false
 libra = { package = "dfibra", git = "https://github.com/dfinance/libra.git", branch = "address_version" }
 libra-move-core-types = { package = "move-core-types", git = "https://github.com/dfinance/libra.git", branch = "master" }
 
-disassembler = { path = "disassembler" }
-compat = { path = "compat", package = "move-compat"}
+disassembler = { path = "disassembler", default-features = false }
+compat = { path = "compat", package = "move-compat", default-features = false }
 
 serde = "1.0.106"
 serde_derive = "1.0.106"
