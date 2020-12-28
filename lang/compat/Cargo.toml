@@ -17,10 +17,10 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 anyhow = { version = "1.0", default-features = false }
 
-libra-types = { git = "https://github.com/dfinance/libra.git", branch = "address_version" }
-move-core-types = { git = "https://github.com/dfinance/libra.git", branch = "address_version" }
-lcs = { git = "https://github.com/dfinance/libra.git", branch = "address_version", package = "libra-canonical-serialization" }
-vm = { git = "https://github.com/dfinance/libra.git", branch = "address_version" }
+libra-types = { git = "https://github.com/dfinance/libra.git", branch = "release-1.0" }
+move-core-types = { git = "https://github.com/dfinance/libra.git", branch = "release-1.0" }
+lcs = { git = "https://github.com/dfinance/libra.git", branch = "release-1.0", package = "libra-canonical-serialization" }
+vm = { git = "https://github.com/dfinance/libra.git", branch = "release-1.0" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 anyhow = "1.0"

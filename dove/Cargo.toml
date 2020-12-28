@@ -9,7 +9,7 @@ authors = [
 edition = "2018"
 
 [dependencies]
-libra = { package = "dfibra", git = "https://github.com/dfinance/libra.git", branch = "address_version" }
+libra = { package = "dfibra", git = "https://github.com/dfinance/libra.git", branch = "release-1.0" }
 structopt = "0.3"
 http = "0.2"
 serde = "1.0"

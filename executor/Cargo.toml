@@ -15,7 +15,7 @@ textwrap = "0.12.1"
 num-format = { version = "0.4", features = ["std"] }
 enum-iterator = "0.6.0"
 
-libra = { package = "dfibra", git = "https://github.com/dfinance/libra.git", branch = "address_version" }
+libra = { package = "dfibra", git = "https://github.com/dfinance/libra.git", branch = "release-1.0" }
 resources = { path = "../resources" }
 lang = { path = "../lang" }
 git-hash = { path = "../common/git-hash" }

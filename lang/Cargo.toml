@@ -10,7 +10,7 @@ edition = "2018"
 publish = false
 
 [dependencies]
-libra = { package = "dfibra", git = "https://github.com/dfinance/libra.git", branch = "address_version" }
+libra = { package = "dfibra", git = "https://github.com/dfinance/libra.git", branch = "release-1.0" }
 libra-move-core-types = { package = "move-core-types", git = "https://github.com/dfinance/libra.git", branch = "master" }
 
 disassembler = { path = "disassembler", default-features = false }
