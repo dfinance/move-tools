@@ -88,3 +88,7 @@ See help:
 ```
 executor -h
 ```
+
+## LICENSE
+
+[LICENSE](/LICENSE)
