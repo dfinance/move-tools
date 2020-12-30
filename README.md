@@ -22,7 +22,13 @@ cd move-tools
 
 ## Dove
 
-Install **dove**:
+Installation with **Polkadot** support:
+
+```shell script
+cargo install --bin=dove --path dove --features="ps_address" --no-default-features
+```
+
+Regular installation:
 
 ```shell script
 cargo install --path dove
