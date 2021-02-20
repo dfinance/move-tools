@@ -5,7 +5,7 @@ use structopt::StructOpt;
 use lang::compiler::file::load_move_files;
 use lang::builder::{Artifacts, MoveBuilder};
 use termcolor::{StandardStream, ColorChoice};
-use std::path::PathBuf;
+use std::path::Path;
 use std::fs::File;
 use std::io::Write;
 use std::fs;
@@ -62,7 +62,7 @@ pub fn verify_and_store(
         .into_iter()
         .partition(|u| matches!(u, CompiledUnit::Module { .. }));
 
-    fn store(units: Vec<CompiledUnit>, base_dir: &PathBuf) -> Result<(), Error> {
+    fn store(units: Vec<CompiledUnit>, base_dir: &Path) -> Result<(), Error> {
         for (idx, unit) in units.into_iter().enumerate() {
             let mut path = base_dir.join(format!("{}_{}", idx, unit.name()));
             path.set_extension("mv");

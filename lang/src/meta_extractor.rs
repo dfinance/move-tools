@@ -92,7 +92,7 @@ fn extract_type_name(tp: Type) -> String {
                 }
             };
             if !types.is_empty() {
-                tp.push_str("<");
+                tp.push('<');
                 tp.push_str(
                     &types
                         .into_iter()
@@ -100,7 +100,7 @@ fn extract_type_name(tp: Type) -> String {
                         .collect::<Vec<_>>()
                         .join(", "),
                 );
-                tp.push_str(">");
+                tp.push('>');
             }
             tp
         }

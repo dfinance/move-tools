@@ -28,9 +28,9 @@ impl FromStr for TypeTagQuery {
     }
 }
 
-impl Into<(TypeTag, Option<u128>)> for TypeTagQuery {
-    fn into(self) -> (TypeTag, Option<u128>) {
-        (self.tt, self.i)
+impl From<TypeTagQuery> for (TypeTag, Option<u128>) {
+    fn from(query: TypeTagQuery) -> Self {
+        (query.tt, query.i)
     }
 }
 

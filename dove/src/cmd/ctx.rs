@@ -13,12 +13,13 @@ use libra::move_lang::parser::lexer::{Lexer, Tok};
 use libra::move_lang::parser::syntax::parse_type;
 use libra::{
     prelude::CompiledUnit,
-    move_lang::{
-        compiled_unit,
-        errors::output_errors,
-    },
+    move_lang::{compiled_unit, errors::output_errors},
 };
 use move_resource_viewer::tte::unwrap_spanned_ty;
+use std::fmt::Debug;
+use std::str::FromStr;
+use lang::compiler::ss58::ss58_to_libra;
+use std::fs;
 
 /// Create transaction.
 #[derive(StructOpt, Debug)]
@@ -66,7 +67,7 @@ impl CreateTransaction {
             }
             Ok((mf, meta.remove(0)))
         } else {
-            return Err(anyhow!("Failed to determine script. There are several scripts. Use '--name' or '--file' to determine the script."));
+            Err(anyhow!("Failed to determine script. There are several scripts. Use '--name' or '--file' to determine the script."))
         }
     }
 
@@ -150,7 +151,7 @@ impl CreateTransaction {
                     None
                 }
             })
-            .filter(|(_, meta)| meta.iter().any(|meta| &meta.name == name))
+            .filter(|(_, meta)| meta.iter().any(|meta| *name == meta.name))
             .collect::<Vec<_>>();
 
         if files.is_empty() {
@@ -158,8 +159,16 @@ impl CreateTransaction {
         }
 
         if files.len() > 1 {
-            let name_list = files.iter().map(|(mf, _)| mf.name()).collect::<Vec<_>>().join(", ");
-            return Err(anyhow!("There are several scripts with the name '{:?}' in files ['{}'].", name, name_list));
+            let name_list = files
+                .iter()
+                .map(|(mf, _)| mf.name())
+                .collect::<Vec<_>>()
+                .join(", ");
+            return Err(anyhow!(
+                "There are several scripts with the name '{:?}' in files ['{}'].",
+                name,
+                name_list
+            ));
         }
 
         let (file, mut meta) = files.remove(0);
@@ -168,7 +177,11 @@ impl CreateTransaction {
         }
 
         if meta.len() > 1 {
-            return Err(anyhow!("There are several scripts with the name '{:?}' in file '{}'.", name, file.name()));
+            return Err(anyhow!(
+                "There are several scripts with the name '{:?}' in file '{}'.",
+                name,
+                file.name()
+            ));
         }
         Ok((file, meta.remove(0)))
     }
@@ -176,7 +189,9 @@ impl CreateTransaction {
     fn build_script(&self, ctx: &Context, script: MoveFile) -> Result<Vec<CompiledUnit>, Error> {
         let mut index = ctx.build_index()?;
 
-        let module_dir = ctx.path_for(&ctx.manifest.layout.module_dir).to_str()
+        let module_dir = ctx
+            .path_for(&ctx.manifest.layout.module_dir)
+            .to_str()
             .map(|path| path.to_owned())
             .ok_or_else(|| anyhow!("Failed to convert module dir path"))?;
 
@@ -209,24 +224,102 @@ impl CreateTransaction {
         }
     }
 
-    fn prepare_arguments(&self, args_type: &Vec<(String, String)>) -> Result<(usize, usize, Vec<ScriptArg>), Error> {
-        args_type.iter()
-            .map(|(_, tp)| tp)
-            .try_fold((0, 0, Vec::new()), |(signers, args_index, mut values), tp| {
-                match tp.as_str() {
-                    "&signer" => {
-                        Ok((signers + 1, args_index, values))
-                    }
-                    "bool" => {
-                        self.type_parameters.get(args_index)
-                            .ok_or_else(|| anyhow!("{} arguments are expected.", args_type.len()))?;
-                        Ok((signers, args_index+ 1, values))
-                    }
-                    &_ => {
-                        Err(anyhow!("Unexpected script parameter: {}", tp))
-                    }
+    fn argument(&self, index: usize, total_expected: usize) -> Result<&String, Error> {
+        self.type_parameters
+            .get(index)
+            .ok_or_else(|| anyhow!("{} arguments are expected.", total_expected))
+    }
+
+    fn prepare_arguments(
+        &self,
+        args_type: &[(String, String)],
+    ) -> Result<(usize, usize, Vec<ScriptArg>), Error> {
+        let total_args = args_type.len();
+
+        fn parse_err<D: Debug>(name: &str, tp: &str, index: usize, value: &str, err: D) -> Error {
+            anyhow!(
+                "Parameter '{}' has {} type. Failed to parse {} [{}]. Error:'{:?}'",
+                name,
+                tp,
+                value,
+                index,
+                err
+            )
+        }
+
+        args_type.iter().try_fold(
+            (0, 0, Vec::new()),
+            |(signers, args_index, mut values), (name, tp)| match tp.as_str() {
+                "&signer" => Ok((signers + 1, args_index, values)),
+                "bool" => {
+                    let arg = self.argument(args_index, total_args)?;
+                    values.push(ScriptArg::Bool(
+                        arg.parse()
+                            .map_err(|err| parse_err(name, tp, args_index, arg, err))?,
+                    ));
+                    Ok((signers, args_index + 1, values))
                 }
-            })
+                "u8" => {
+                    let arg = self.argument(args_index, total_args)?;
+                    values.push(ScriptArg::U8(
+                        arg.parse()
+                            .map_err(|err| parse_err(name, tp, args_index, arg, err))?,
+                    ));
+                    Ok((signers, args_index + 1, values))
+                }
+                "u64" => {
+                    let arg = self.argument(args_index, total_args)?;
+                    values.push(ScriptArg::U64(
+                        arg.parse()
+                            .map_err(|err| parse_err(name, tp, args_index, arg, err))?,
+                    ));
+                    Ok((signers, args_index + 1, values))
+                }
+                "u128" => {
+                    let arg = self.argument(args_index, total_args)?;
+                    values.push(ScriptArg::U128(
+                        arg.parse()
+                            .map_err(|err| parse_err(name, tp, args_index, arg, err))?,
+                    ));
+                    Ok((signers, args_index + 1, values))
+                }
+                "address" => {
+                    let arg = self.argument(args_index, total_args)?;
+                    values.push(ScriptArg::Address(Address::from_str(arg)?.addr));
+                    Ok((signers, args_index + 1, values))
+                }
+                "vector<u8>" => {
+                    let arg = self.argument(args_index, total_args)?;
+                    let buffer = if arg.contains('[') {
+                        parse_vec(arg, "u8")?
+                    } else {
+                        hex::decode(arg)?
+                    };
+                    values.push(ScriptArg::VectorU8(buffer));
+                    Ok((signers, args_index + 1, values))
+                }
+                "vector<u64>" => {
+                    let arg = self.argument(args_index, total_args)?;
+                    values.push(ScriptArg::VectorU64(parse_vec(arg, "u64")?));
+                    Ok((signers, args_index + 1, values))
+                }
+                "vector<u128>" => {
+                    let arg = self.argument(args_index, total_args)?;
+                    values.push(ScriptArg::VectorU128(parse_vec(arg, "u128")?));
+                    Ok((signers, args_index + 1, values))
+                }
+                "vector<address>" => {
+                    let arg = self.argument(args_index, total_args)?;
+                    let address = parse_vec::<Address>(arg, "vector<address>")?
+                        .iter()
+                        .map(|addr| addr.addr)
+                        .collect();
+                    values.push(ScriptArg::VectorAddress(address));
+                    Ok((signers, args_index + 1, values))
+                }
+                &_ => Err(anyhow!("Unexpected script parameter: {}", tp)),
+            },
+        )
     }
 }
 
@@ -235,11 +328,12 @@ impl Cmd for CreateTransaction {
         let (script, meta) = self.lookup_script(&ctx)?;
         let units = self.build_script(&ctx, script)?;
 
-        let unit = units.into_iter()
+        let unit = units
+            .into_iter()
             .find(|unit| {
                 let is_module = match &unit {
                     CompiledUnit::Module { .. } => false,
-                    CompiledUnit::Script { .. } => true
+                    CompiledUnit::Script { .. } => true,
                 };
                 is_module && unit.name() == meta.name
             })
@@ -247,14 +341,34 @@ impl Cmd for CreateTransaction {
             .ok_or_else(|| anyhow!("Script '{}' not found", meta.name))?;
 
         if meta.type_parameters.len() != self.type_parameters.len() {
-            return Err(anyhow!("Script '{}' takes {} type parameters, {} passed", meta.name, meta.type_parameters.len(), self.type_parameters.len()));
+            return Err(anyhow!(
+                "Script '{}' takes {} type parameters, {} passed",
+                meta.name,
+                meta.type_parameters.len(),
+                self.type_parameters.len()
+            ));
         }
 
-        let type_parameters = self.type_parameters.iter()
+        let type_parameters = self
+            .type_parameters
+            .iter()
             .map(|tp| parse_type_params(tp))
             .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(())
+        let (signers, args_count, args) = self.prepare_arguments(&meta.parameters)?;
+
+        if meta.parameters.len() != args_count {
+            return Err(anyhow!(
+                "Script '{}' takes {} parameters, {} passed",
+                meta.name,
+                args_count,
+                meta.parameters.len()
+            ));
+        }
+
+        let tx = Transaction::new(signers as u8, unit, args, type_parameters);
+
+        store_transaction(&ctx, &meta.name, dbg!(tx))
     }
 }
 
@@ -292,16 +406,100 @@ pub struct Transaction {
     type_args: Vec<TypeTag>,
 }
 
+impl Transaction {
+    /// Create a new transaction.
+    pub fn new(
+        signers_count: u8,
+        code: Vec<u8>,
+        args: Vec<ScriptArg>,
+        type_args: Vec<TypeTag>,
+    ) -> Transaction {
+        Transaction {
+            signers_count,
+            code,
+            args,
+            type_args,
+        }
+    }
+}
+
 fn parse_type_params(tkn: &str) -> Result<TypeTag, Error> {
     let map_err = |err| Error::msg(format!("{:?}", err));
 
     let mut lexer = Lexer::new(tkn, "query", Default::default());
     lexer.advance().map_err(map_err)?;
 
-    while lexer.peek() != Tok::EOF {
-        let ty = parse_type(&mut lexer).map_err(map_err)?;
-        return Ok(unwrap_spanned_ty(ty)?);
-    }
-    Err(anyhow!("Failed to parse type parameter:{}", tkn))
+    let ty = parse_type(&mut lexer).map_err(map_err)?;
+    unwrap_spanned_ty(ty)
 }
 
+fn parse_vec<E>(tkn: &str, tp_name: &str) -> Result<Vec<E>, Error>
+    where
+        E: FromStr,
+{
+    let map_err = |err| Error::msg(format!("{:?}", err));
+
+    let mut lexer = Lexer::new(tkn, "vec", Default::default());
+    lexer.advance().map_err(map_err)?;
+
+    if lexer.peek() != Tok::LBracket {
+        return Err(anyhow!("Vector in format  [n1, n2, ..., nn] is expected."));
+    }
+    lexer.advance().map_err(map_err)?;
+
+    let mut elements = vec![];
+    while lexer.peek() != Tok::RBracket {
+        match lexer.peek() {
+            Tok::Comma => {
+                lexer.advance().map_err(map_err)?;
+                continue;
+            }
+            Tok::EOF => {
+                return Err(anyhow!("unexpected end of vector."));
+            }
+            _ => {
+                elements.push(E::from_str(lexer.content()).map_err(|_| {
+                    anyhow!(
+                        "Failed to parse vector element. {} type is expected. Actual:'{}'",
+                        tp_name,
+                        lexer.content()
+                    )
+                })?);
+                lexer.advance().map_err(map_err)?;
+            }
+        }
+    }
+    Ok(elements)
+}
+
+fn store_transaction(ctx: &Context, name: &str, tx: Transaction) -> Result<(), Error> {
+    let tx_dir = ctx.path_for(&ctx.manifest.layout.transaction_output);
+    if !tx_dir.exists() {
+        fs::create_dir_all(&tx_dir)?;
+    }
+
+    let mut tx_file = tx_dir.join(name);
+    tx_file.set_extension("mvt");
+
+    if tx_file.exists() {
+        fs::remove_file(&tx_file)?;
+    }
+    info!("Store transaction:{:?}", tx_file);
+    Ok(fs::write(&tx_file, libra::lcs::to_bytes(&tx)?)?)
+}
+
+struct Address {
+    addr: AccountAddress,
+}
+
+impl FromStr for Address {
+    type Err = Error;
+
+    fn from_str(addr: &str) -> Result<Self, Self::Err> {
+        let addr = match ss58_to_libra(addr) {
+            Ok(addr) => AccountAddress::from_hex_literal(&addr)?,
+            Err(_) => AccountAddress::from_hex_literal(&addr)?,
+        };
+        Ok(Address { addr })
+    }
+}

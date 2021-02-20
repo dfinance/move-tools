@@ -55,6 +55,7 @@ impl Default for Package {
     }
 }
 
+#[allow(clippy::unnecessary_wraps)]
 fn dialect() -> Option<String> {
     Some(default_dialect())
 }
@@ -95,6 +96,7 @@ fn index() -> String {
     ".Dove.man".to_owned()
 }
 
+#[allow(clippy::unnecessary_wraps)]
 fn code_code_address() -> Option<String> {
     Some(format!("0x{}", CORE_CODE_ADDRESS))
 }

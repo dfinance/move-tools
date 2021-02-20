@@ -236,6 +236,7 @@ pub fn loop_turn(
 }
 
 #[allow(unused)]
+#[allow(clippy::unnecessary_wraps)]
 fn on_request(
     global_state: &mut GlobalState,
     pool: &ThreadPool,
