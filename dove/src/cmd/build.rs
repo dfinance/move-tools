@@ -2,7 +2,6 @@ use crate::cmd::{Cmd, load_dependencies};
 use crate::context::Context;
 use anyhow::Error;
 use structopt::StructOpt;
-use crate::index::Index;
 use lang::compiler::file::load_move_files;
 use lang::builder::{Artifacts, MoveBuilder};
 use termcolor::{StandardStream, ColorChoice};
@@ -24,17 +23,12 @@ pub struct Build {}
 
 impl Cmd for Build {
     fn apply(self, ctx: Context) -> Result<(), Error> {
-        let dirs: Vec<_> = [
+        let dirs = ctx.paths_for(&[
             &ctx.manifest.layout.script_dir,
             &ctx.manifest.layout.module_dir,
-        ]
-        .iter()
-        .map(|d| ctx.path_for(&d))
-        .filter(|p| p.exists())
-        .collect();
+        ]);
 
-        let mut index = Index::load(&ctx)?;
-        index.build()?;
+        let mut index = ctx.build_index()?;
 
         let dep_set = index.make_dependency_set(&dirs)?;
         let dep_list = load_dependencies(dep_set)?;

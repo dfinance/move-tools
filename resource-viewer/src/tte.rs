@@ -40,7 +40,7 @@ impl TypeTagQuery {
     }
 }
 
-fn unwrap_spanned_ty(ty: Type) -> Result<TypeTag, Error> {
+pub fn unwrap_spanned_ty(ty: Type) -> Result<TypeTag, Error> {
     fn unwrap_spanned_ty_(ty: Type, this: Option<AccountAddress>) -> Result<TypeTag, Error> {
         let st = match ty.value {
             Type_::Apply(ma, mut ty_params) => {
