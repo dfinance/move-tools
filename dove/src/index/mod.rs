@@ -257,12 +257,7 @@ impl<'a> Index<'a> {
         Ok(())
     }
 
-    fn store_meta(
-        &mut self,
-        f_meta: Vec<FileMeta>,
-        src_type: SourceType,
-        dep_name: Rc<str>,
-    ) {
+    fn store_meta(&mut self, f_meta: Vec<FileMeta>, src_type: SourceType, dep_name: Rc<str>) {
         for file in f_meta {
             for unit in file.meta {
                 let name = Rc::new(unit.module_id);

@@ -24,22 +24,26 @@ use std::fs;
 /// Create transaction.
 #[derive(StructOpt, Debug)]
 pub struct CreateTransaction {
+    #[structopt(help = "Script call declaration.\
+     Example: 'create_balance<0x01::Dfinance::USD>([10,10], true, 68656c6c6f776f726c64, 100)'\
+     ")]
+    call: Option<String>,
     #[structopt(help = "Script name.", long = "name", short = "n")]
     script_name: Option<String>,
     #[structopt(help = "Script file name.", long = "file", short = "f")]
     file_name: Option<String>,
     #[structopt(
-    help = r#"Script type parametrs, e.g. 0x1::Dfinance::USD"#,
-    name = "Script type parameters.",
-    long = "type",
-    short = "t"
+        help = r#"Script type parametrs, e.g. 0x1::Dfinance::USD"#,
+        name = "Script type parameters.",
+        long = "type",
+        short = "t"
     )]
     type_parameters: Vec<String>,
     #[structopt(
-    help = r#"Script arguments, e.g. 10 20 30"#,
-    name = "Script arguments.",
-    long = "args",
-    short = "a"
+        help = r#"Script arguments, e.g. 10 20 30"#,
+        name = "Script arguments.",
+        long = "args",
+        short = "a"
     )]
     args: Vec<String>,
 }
@@ -225,7 +229,7 @@ impl CreateTransaction {
     }
 
     fn argument(&self, index: usize, total_expected: usize) -> Result<&String, Error> {
-        self.type_parameters
+        self.args
             .get(index)
             .ok_or_else(|| anyhow!("{} arguments are expected.", total_expected))
     }
@@ -357,18 +361,18 @@ impl Cmd for CreateTransaction {
 
         let (signers, args_count, args) = self.prepare_arguments(&meta.parameters)?;
 
-        if meta.parameters.len() != args_count {
+        if self.args.len() != args_count {
             return Err(anyhow!(
                 "Script '{}' takes {} parameters, {} passed",
                 meta.name,
                 args_count,
-                meta.parameters.len()
+                self.args.len()
             ));
         }
 
         let tx = Transaction::new(signers as u8, unit, args, type_parameters);
 
-        store_transaction(&ctx, &meta.name, dbg!(tx))
+        store_transaction(&ctx, &meta.name, tx)
     }
 }
 
@@ -434,8 +438,8 @@ fn parse_type_params(tkn: &str) -> Result<TypeTag, Error> {
 }
 
 fn parse_vec<E>(tkn: &str, tp_name: &str) -> Result<Vec<E>, Error>
-    where
-        E: FromStr,
+where
+    E: FromStr,
 {
     let map_err = |err| Error::msg(format!("{:?}", err));
 
@@ -484,7 +488,7 @@ fn store_transaction(ctx: &Context, name: &str, tx: Transaction) -> Result<(), E
     if tx_file.exists() {
         fs::remove_file(&tx_file)?;
     }
-    info!("Store transaction:{:?}", tx_file);
+    println!("Store transaction:{:?}", tx_file);
     Ok(fs::write(&tx_file, libra::lcs::to_bytes(&tx)?)?)
 }
 
