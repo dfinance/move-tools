@@ -18,15 +18,14 @@ use libra::{
 use move_resource_viewer::tte::unwrap_spanned_ty;
 use std::fmt::Debug;
 use std::str::FromStr;
-use lang::compiler::ss58::ss58_to_libra;
+use lang::compiler::ss58::{ss58_to_libra, replace_ss58_addresses};
 use std::fs;
 
 /// Create transaction.
 #[derive(StructOpt, Debug)]
-pub struct CreateTransaction {
+pub struct CreateTransactionCmd {
     #[structopt(help = "Script call declaration.\
-     Example: 'create_balance<0x01::Dfinance::USD>([10,10], true, 68656c6c6f776f726c64, 100)'\
-     ")]
+     Example: 'create_balance<0x01::Dfinance::USD>([10,10], true, 68656c6c6f776f726c64, 100)'")]
     call: Option<String>,
     #[structopt(help = "Script name.", long = "name", short = "n")]
     script_name: Option<String>,
@@ -38,49 +37,163 @@ pub struct CreateTransaction {
         long = "type",
         short = "t"
     )]
-    type_parameters: Vec<String>,
+    type_parameters: Option<Vec<String>>,
     #[structopt(
         help = r#"Script arguments, e.g. 10 20 30"#,
         name = "Script arguments.",
         long = "args",
         short = "a"
     )]
-    args: Vec<String>,
+    args: Option<Vec<String>>,
 }
 
-impl CreateTransaction {
-    fn lookup_script(&self, ctx: &Context) -> Result<(MoveFile, Meta), Error> {
-        if let Some(file_name) = &self.file_name {
-            return self.lookup_script_by_file_name(ctx, file_name);
-        }
+impl Cmd for CreateTransactionCmd {
+    fn apply(self, ctx: Context) -> Result<(), Error> {
+        let builder = TransactionBuilder::new(self, &ctx)?;
+        let (script_name, transaction) = builder.build()?;
+        store_transaction(&ctx, &script_name, transaction)
+    }
+}
 
-        if let Some(name) = &self.script_name {
-            return self.lookup_script_by_name(ctx, name);
-        }
+struct TransactionBuilder<'a> {
+    script_file_name: Option<String>,
+    script_name: Option<String>,
+    type_parameters: Vec<TypeTag>,
+    args: Vec<String>,
+    dove_ctx: &'a Context,
+}
 
-        let script_path = ctx.path_for(&ctx.manifest.layout.script_dir);
-        let files = find_move_files(&script_path)?;
-        if files.len() == 1 {
-            let mf = MoveFile::load(&files[0])?;
-            let mut meta = ScriptMetadata::extract(ctx.dialect.as_ref(), &mf)?;
-            if meta.is_empty() {
-                return Err(anyhow!("Script not found."));
-            }
-            if meta.len() > 1 {
-                return Err(anyhow!("Failed to determine script. There are several scripts. Use '--name' to determine the script."));
-            }
-            Ok((mf, meta.remove(0)))
+impl<'a> TransactionBuilder<'a> {
+    pub fn new(cmd: CreateTransactionCmd, ctx: &'a Context) -> Result<TransactionBuilder, Error> {
+        let (mut script_name, mut type_parameters, mut args) = if let Some(call) = cmd.call {
+            let (script_name, type_parameters, args) = Self::parse_call(&call)?;
+            (Some(script_name), type_parameters, args)
         } else {
-            Err(anyhow!("Failed to determine script. There are several scripts. Use '--name' or '--file' to determine the script."))
+            (None, vec![], vec![])
+        };
+
+        if let Some(cmd_script_name) = cmd.script_name {
+            script_name = Some(cmd_script_name);
         }
+
+        if let Some(cmd_type_parameters) = cmd.type_parameters {
+            type_parameters = cmd_type_parameters
+                .iter()
+                .map(|tp| replace_ss58_addresses(tp, &mut Default::default()))
+                .map(|tp| parse_type_params(&mut Lexer::new(&tp, "tp", Default::default())))
+                .collect::<Result<_, _>>()?;
+        }
+
+        if let Some(cmd_args) = cmd.args {
+            args = cmd_args
+                .iter()
+                .map(|arg| replace_ss58_addresses(arg, &mut Default::default()))
+                .collect();
+        }
+
+        Ok(TransactionBuilder {
+            script_file_name: cmd.file_name,
+            script_name,
+            type_parameters,
+            args,
+            dove_ctx: ctx,
+        })
     }
 
-    fn lookup_script_by_file_name(
-        &self,
-        ctx: &Context,
-        fname: &str,
-    ) -> Result<(MoveFile, Meta), Error> {
-        let script_path = ctx.path_for(&ctx.manifest.layout.script_dir);
+    pub fn parse_call(call: &str) -> Result<(String, Vec<TypeTag>, Vec<String>), Error> {
+        let call = replace_ss58_addresses(call, &mut Default::default());
+
+        let map_err = |err| Error::msg(format!("{:?}", err));
+        let mut lexer = Lexer::new(&call, "call", Default::default());
+        lexer.advance().map_err(map_err)?;
+        if lexer.peek() != Tok::IdentifierValue {
+            return Err(anyhow!("Invalid call script format.\
+             Expected function identifier. Use pattern \
+             'script_name<comma separated type parameters>(comma separated parameters WITHOUT signers)'"));
+        }
+
+        let script_name = lexer.content().to_owned();
+
+        lexer.advance().map_err(map_err)?;
+
+        let type_parameters = if lexer.peek() == Tok::Less {
+            let mut type_parameter = vec![];
+
+            lexer.advance().map_err(map_err)?;
+            while lexer.peek() != Tok::Greater {
+                if lexer.peek() == Tok::EOF {
+                    return Err(anyhow!("Invalid call script format.\
+             Invalid type parameters format.. Use pattern \
+             'script_name<comma separated type parameters>(comma separated parameters WITHOUT signers)'"));
+                }
+
+                if lexer.peek() == Tok::Comma {
+                    lexer.advance().map_err(map_err)?;
+                    continue;
+                }
+
+                type_parameter.push(parse_type_params(&mut lexer)?);
+            }
+            lexer.advance().map_err(map_err)?;
+            type_parameter
+        } else {
+            vec![]
+        };
+
+        if lexer.peek() != Tok::LParen {
+            return Err(anyhow!("Invalid call script format.\
+             Invalid script arguments format.. Left paren '(' is expected. Use pattern \
+             'script_name<comma separated type parameters>(comma separated parameters WITHOUT signers)'"));
+        }
+
+        let mut arguments = vec![];
+
+        lexer.advance().map_err(map_err)?;
+        while lexer.peek() != Tok::RParen {
+            if lexer.peek() == Tok::EOF {
+                return Err(anyhow!("Invalid call script format.\
+             Invalid arguments format.. Use pattern \
+             'script_name<comma separated type parameters>(comma separated parameters WITHOUT signers)'"));
+            }
+
+            if lexer.peek() == Tok::Comma {
+                lexer.advance().map_err(map_err)?;
+                continue;
+            }
+
+            if lexer.peek() == Tok::LBracket {
+                let mut token = String::new();
+                token.push_str(lexer.content());
+                lexer.advance().map_err(map_err)?;
+                while lexer.peek() != Tok::RBracket {
+                    token.push_str(lexer.content());
+                    lexer.advance().map_err(map_err)?;
+                }
+                token.push_str(lexer.content());
+                arguments.push(token);
+            } else {
+                let mut token = String::new();
+                token.push_str(lexer.content());
+                lexer.advance().map_err(map_err)?;
+                while lexer.peek() != Tok::Comma && lexer.peek() != Tok::RParen {
+                    token.push_str(lexer.content());
+                    lexer.advance().map_err(map_err)?;
+                }
+                arguments.push(token);
+                if lexer.peek() == Tok::RParen {
+                    break;
+                }
+            }
+            lexer.advance().map_err(map_err)?;
+        }
+
+        Ok((script_name, type_parameters, arguments))
+    }
+
+    fn lookup_script_by_file_name(&self, fname: &str) -> Result<(MoveFile, Meta), Error> {
+        let script_path = self
+            .dove_ctx
+            .path_for(&self.dove_ctx.manifest.layout.script_dir);
         let file_path = if !fname.ends_with("move") {
             let mut path = script_path.join(fname);
             path.set_extension("move");
@@ -93,7 +206,7 @@ impl CreateTransaction {
         }
 
         let script = MoveFile::load(&file_path)?;
-        let mut scripts = ScriptMetadata::extract(ctx.dialect.as_ref(), &script)?;
+        let mut scripts = ScriptMetadata::extract(self.dove_ctx.dialect.as_ref(), &script)?;
         if scripts.is_empty() {
             return Err(anyhow!("Script not found in file '{}'", fname));
         }
@@ -125,12 +238,10 @@ impl CreateTransaction {
         Ok((script, meta))
     }
 
-    fn lookup_script_by_name(
-        &self,
-        ctx: &Context,
-        name: &str,
-    ) -> Result<(MoveFile, Meta), Error> {
-        let script_path = ctx.path_for(&ctx.manifest.layout.script_dir);
+    fn lookup_script_by_name(&self, name: &str) -> Result<(MoveFile, Meta), Error> {
+        let script_path = self
+            .dove_ctx
+            .path_for(&self.dove_ctx.manifest.layout.script_dir);
         let mut files = find_move_files(&script_path)?
             .iter()
             .map(MoveFile::load)
@@ -147,7 +258,10 @@ impl CreateTransaction {
                     None
                 }
             })
-            .map(|mf| ScriptMetadata::extract(ctx.dialect.as_ref(), &mf).map(|meta| (mf, meta)))
+            .map(|mf| {
+                ScriptMetadata::extract(self.dove_ctx.dialect.as_ref(), &mf)
+                    .map(|meta| (mf, meta))
+            })
             .filter_map(|script| match script {
                 Ok((mf, meta)) => Some((mf, meta)),
                 Err(err) => {
@@ -190,11 +304,40 @@ impl CreateTransaction {
         Ok((file, meta.remove(0)))
     }
 
-    fn build_script(&self, ctx: &Context, script: MoveFile) -> Result<Vec<CompiledUnit>, Error> {
-        let mut index = ctx.build_index()?;
+    fn lookup_script(&self) -> Result<(MoveFile, Meta), Error> {
+        if let Some(file_name) = &self.script_file_name {
+            return self.lookup_script_by_file_name(file_name);
+        }
 
-        let module_dir = ctx
-            .path_for(&ctx.manifest.layout.module_dir)
+        if let Some(name) = &self.script_name {
+            return self.lookup_script_by_name(name);
+        }
+
+        let script_path = self
+            .dove_ctx
+            .path_for(&self.dove_ctx.manifest.layout.script_dir);
+        let files = find_move_files(&script_path)?;
+        if files.len() == 1 {
+            let mf = MoveFile::load(&files[0])?;
+            let mut meta = ScriptMetadata::extract(self.dove_ctx.dialect.as_ref(), &mf)?;
+            if meta.is_empty() {
+                return Err(anyhow!("Script not found."));
+            }
+            if meta.len() > 1 {
+                return Err(anyhow!("Failed to determine script. There are several scripts. Use '--name' to determine the script."));
+            }
+            Ok((mf, meta.remove(0)))
+        } else {
+            Err(anyhow!("Failed to determine script. There are several scripts. Use '--name' or '--file' to determine the script."))
+        }
+    }
+
+    fn build_script(&self, script: MoveFile) -> Result<Vec<CompiledUnit>, Error> {
+        let mut index = self.dove_ctx.build_index()?;
+
+        let module_dir = self
+            .dove_ctx
+            .path_for(&self.dove_ctx.manifest.layout.module_dir)
             .to_str()
             .map(|path| path.to_owned())
             .ok_or_else(|| anyhow!("Failed to convert module dir path"))?;
@@ -203,16 +346,19 @@ impl CreateTransaction {
         let mut dep_list = load_dependencies(dep_set)?;
         dep_list.extend(load_move_files(&[module_dir])?);
 
-        let sender = ctx.account_address()?;
+        let sender = self.dove_ctx.account_address()?;
         let Artifacts { files, prog } =
-            MoveBuilder::new(ctx.dialect.as_ref(), Some(sender).as_ref())
+            MoveBuilder::new(self.dove_ctx.dialect.as_ref(), Some(sender).as_ref())
                 .build(&[script], &dep_list);
 
         match prog {
             Err(errors) => {
                 let mut writer = StandardStream::stderr(ColorChoice::Auto);
                 output_errors(&mut writer, files, errors);
-                Err(anyhow!("could not compile:{}", ctx.project_name()))
+                Err(anyhow!(
+                    "could not compile:{}",
+                    self.dove_ctx.project_name()
+                ))
             }
             Ok(compiled_units) => {
                 let (compiled_units, ice_errors) = compiled_unit::verify_units(compiled_units);
@@ -220,18 +366,12 @@ impl CreateTransaction {
                 if !ice_errors.is_empty() {
                     let mut writer = StandardStream::stderr(ColorChoice::Auto);
                     output_errors(&mut writer, files, ice_errors);
-                    Err(anyhow!("could not verify:{}", ctx.project_name()))
+                    Err(anyhow!("could not verify:{}", self.dove_ctx.project_name()))
                 } else {
                     Ok(compiled_units)
                 }
             }
         }
-    }
-
-    fn argument(&self, index: usize, total_expected: usize) -> Result<&String, Error> {
-        self.args
-            .get(index)
-            .ok_or_else(|| anyhow!("{} arguments are expected.", total_expected))
     }
 
     fn prepare_arguments(
@@ -325,12 +465,16 @@ impl CreateTransaction {
             },
         )
     }
-}
 
-impl Cmd for CreateTransaction {
-    fn apply(self, ctx: Context) -> Result<(), Error> {
-        let (script, meta) = self.lookup_script(&ctx)?;
-        let units = self.build_script(&ctx, script)?;
+    fn argument(&self, index: usize, total_expected: usize) -> Result<&String, Error> {
+        self.args
+            .get(index)
+            .ok_or_else(|| anyhow!("{} arguments are expected.", total_expected))
+    }
+
+    pub fn build(self) -> Result<(String, Transaction), Error> {
+        let (script, meta) = self.lookup_script()?;
+        let units = self.build_script(script)?;
 
         let unit = units
             .into_iter()
@@ -353,12 +497,6 @@ impl Cmd for CreateTransaction {
             ));
         }
 
-        let type_parameters = self
-            .type_parameters
-            .iter()
-            .map(|tp| parse_type_params(tp))
-            .collect::<Result<Vec<_>, _>>()?;
-
         let (signers, args_count, args) = self.prepare_arguments(&meta.parameters)?;
 
         if self.args.len() != args_count {
@@ -370,9 +508,10 @@ impl Cmd for CreateTransaction {
             ));
         }
 
-        let tx = Transaction::new(signers as u8, unit, args, type_parameters);
-
-        store_transaction(&ctx, &meta.name, tx)
+        Ok((
+            meta.name.to_owned(),
+            Transaction::new(signers as u8, unit, args, self.type_parameters),
+        ))
     }
 }
 
@@ -427,13 +566,8 @@ impl Transaction {
     }
 }
 
-fn parse_type_params(tkn: &str) -> Result<TypeTag, Error> {
-    let map_err = |err| Error::msg(format!("{:?}", err));
-
-    let mut lexer = Lexer::new(tkn, "query", Default::default());
-    lexer.advance().map_err(map_err)?;
-
-    let ty = parse_type(&mut lexer).map_err(map_err)?;
+fn parse_type_params(lexer: &mut Lexer) -> Result<TypeTag, Error> {
+    let ty = parse_type(lexer).map_err(|err| Error::msg(format!("{:?}", err)))?;
     unwrap_spanned_ty(ty)
 }
 
@@ -505,5 +639,65 @@ impl FromStr for Address {
             Err(_) => AccountAddress::from_hex_literal(&addr)?,
         };
         Ok(Address { addr })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::cmd::ctx::TransactionBuilder;
+    use libra::move_core_types::language_storage::{TypeTag, StructTag};
+    use libra::move_core_types::language_storage::CORE_CODE_ADDRESS;
+    use libra::move_core_types::identifier::Identifier;
+
+    #[test]
+    fn test_parse_call() {
+        let (name, tp, args) = TransactionBuilder::parse_call("create_account<u8, 0x01::Dfinance::USD<u8>>(10, 68656c6c6f, [10, 23], true, 1exaAg2VJRQbyUBAeXcktChCAqjVP9TUxF3zo23R2T6EGdE)").unwrap();
+        assert_eq!(name, "create_account");
+        assert_eq!(
+            tp,
+            vec![
+                TypeTag::U8,
+                TypeTag::Struct(StructTag {
+                    address: CORE_CODE_ADDRESS,
+                    module: Identifier::new("Dfinance").unwrap(),
+                    name: Identifier::new("USD").unwrap(),
+                    type_params: vec![TypeTag::U8],
+                })
+            ]
+        );
+        assert_eq!(
+            args,
+            vec![
+                "10".to_owned(),
+                "68656c6c6f".to_owned(),
+                "[10,23]".to_owned(),
+                "true".to_owned(),
+                "0x1CF326C5AAA5AF9F0E2791E66310FE8F044FAADAF12567EAA0976959D1F7731F".to_owned()
+            ]
+        );
+
+        let (name, tp, args) =
+            TransactionBuilder::parse_call("create_account<0x01::Dfinance::USD>()").unwrap();
+        assert_eq!(name, "create_account");
+        assert_eq!(
+            tp,
+            vec![TypeTag::Struct(StructTag {
+                address: CORE_CODE_ADDRESS,
+                module: Identifier::new("Dfinance").unwrap(),
+                name: Identifier::new("USD").unwrap(),
+                type_params: vec![],
+            })]
+        );
+        assert_eq!(args, Vec::<String>::new());
+
+        let (name, tp, args) = TransactionBuilder::parse_call("create_account()").unwrap();
+        assert_eq!(name, "create_account");
+        assert_eq!(tp, Vec::<TypeTag>::new());
+        assert_eq!(args, Vec::<String>::new());
+
+        let (name, tp, args) = TransactionBuilder::parse_call("create_account<>()").unwrap();
+        assert_eq!(name, "create_account");
+        assert_eq!(tp, Vec::<TypeTag>::new());
+        assert_eq!(args, Vec::<String>::new());
     }
 }
