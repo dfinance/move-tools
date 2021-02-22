@@ -60,7 +60,7 @@ enum Opt {
         cmd: Run,
     },
     #[structopt(about = "Create transaction")]
-    Ctx {
+    Ct {
         #[structopt(flatten)]
         cmd: CreateTransactionCmd,
     },
@@ -79,7 +79,7 @@ fn main() {
         Opt::Build { cmd } => cmd.execute(),
         Opt::Test { cmd } => cmd.execute(),
         Opt::Run { cmd } => cmd.execute(),
-        Opt::Ctx { cmd } => cmd.execute(),
+        Opt::Ct { cmd } => cmd.execute(),
     });
 }
 
