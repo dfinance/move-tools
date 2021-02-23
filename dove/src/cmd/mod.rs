@@ -9,7 +9,7 @@ pub mod build;
 /// Project dependencies loader.
 pub mod clean;
 /// Create transaction.
-pub mod ctx;
+pub mod ct;
 /// Dependencies fetcher.
 pub mod fetch;
 /// Project initializer.
