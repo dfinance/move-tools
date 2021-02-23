@@ -78,7 +78,7 @@ pub fn data_request_with(
     info!("data: {:?}", result);
 
     result
-        .ok_or(Error::msg("not found"))
+        .ok_or_else(|| Error::msg("not found"))
         .map(|result| BytesForBlock(result, 0))
 }
 
@@ -100,7 +100,7 @@ pub fn get_resource_with(
     info!("data: {:?}", result);
 
     result
-        .ok_or(Error::msg("not found"))
+        .ok_or_else(|| Error::msg("not found"))
         .map(|result| BytesForBlock(result, 0))
 }
 
