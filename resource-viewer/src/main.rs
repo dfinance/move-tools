@@ -7,6 +7,8 @@
 
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate anyhow;
 
 use std::path::{Path, PathBuf};
 use anyhow::{Result, Error, anyhow};
@@ -14,12 +16,13 @@ use http::Uri;
 use clap::Clap;
 use libra::prelude::*;
 use lang::compiler::bech32::{bech32_into_libra, HRP};
-use dnclient::blocking as net;
 use libra::rv;
-use move_resource_viewer::{tte, ser};
+use move_resource_viewer::{tte, ser, net::*};
 
-const VERSION: &str = git_hash::crate_version_with_git_hash_short!();
+
+#[cfg(feature = "json-schema")]
 const JSON_SCHEMA_STDOUT: &str = "-";
+const VERSION: &str = git_hash::crate_version_with_git_hash_short!();
 
 #[derive(Clap, Debug)]
 #[clap(name = "Move resource viewer", version = VERSION)]
@@ -61,6 +64,7 @@ struct Cfg {
 
     /// Export JSON schema for output format.
     /// Special value for write to stdout: "-"
+    #[cfg(feature = "json-schema")]
     #[clap(long = "json-schema")]
     json_schema: Option<PathBuf>,
 }
@@ -107,11 +111,11 @@ fn run() -> Result<(), Error> {
     match tte {
         TypeTag::Struct(st) => {
             let key = ResourceKey::new(addr, st.clone());
-            let res = net::get_resource(&key, &host, height);
+            let res = get_resource(&key, &host, height);
             res.map(|resp| {
                 let bytes = resp.as_bytes();
                 if !bytes.is_empty() {
-                    let client = net::client::DnodeRestClient::new(host, height);
+                    let client = NodeClient::new(host, height);
 
                     // Internally produce FatStructType (with layout) for StructTag by
                     // resolving & de-.. entire deps-chain.
@@ -148,7 +152,9 @@ fn run() -> Result<(), Error> {
     }
 }
 
+#[allow(unused_variables)]
 fn produce_json_schema(cfg: &Cfg) {
+    #[cfg(feature = "json-schema")]
     if let Some(path) = cfg.json_schema.as_ref() {
         let schema = ser::produce_json_schema();
         let render = serde_json::to_string_pretty(&schema).unwrap();

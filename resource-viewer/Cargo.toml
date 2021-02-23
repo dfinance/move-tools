@@ -13,7 +13,7 @@ http = "0.2"
 
 serde = { version = "=1.0.118", features = ["derive", "rc"] }
 serde_json = "1.0"
-schemars = { version = "0.8", features = ["default", "derive", "preserve_order"] }
+schemars = { version = "0.8", features = ["default", "derive", "preserve_order"], optional = true }
 hex = "0.4.2"
 
 # move-lang deps:
@@ -24,6 +24,24 @@ git-hash = { path = "../common/git-hash" }
 compat = { path = "../lang/compat", package = "move-compat" }
 dnclient = { path = "../common/dnode-rest-client", package = "dnode-rest-client" }
 
+# ps:
+[dependencies.substrate-api-client]
+git = "https://github.com/scs/substrate-api-client.git"
+# rev = "b238501673c44bd3ccf507ee1f69a69f6d5c69a4"
+rev = "62afbac0be1928681d8c70565fa0cc39a92cf4c8"
+optional = true
+# [dependencies.sp-core]
+# version = "3.0"
+# optional = true
+# [dependencies.keyring]
+# git = "https://github.com/paritytech/substrate.git"
+# rev = "38f723bf5dae257220fc25d4e86759f4a664d50f"
+# package = "sp-keyring"
+[dependencies.keyring]
+version = '2.0.0'
+package = "sp-keyring"
+optional = true
+
 # cli:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 anyhow = { version = "1.0", default-features = true }
@@ -32,7 +50,9 @@ env_logger = "0.8.2"
 
 [features]
 default = [
-    "dfinance_address"
+    "json-schema",
+    "dfinance_address",
+    # "ps_address",
 ]
 
 libra_address = [
@@ -49,4 +69,9 @@ ps_address = [
     "lang/ps_address",
     "libra/ps_address",
     "compat/ps_address",
+    "substrate-api-client",
+    # "sp-core",
+    "keyring",
 ]
+
+json-schema = [ "schemars", ]
