@@ -101,9 +101,13 @@ fn run() -> Result<(), Error> {
     let (tte, index) = cfg.query.into_inner();
     let addr = if cfg.address.starts_with(HRP) {
         AccountAddress::from_hex_literal(&bech32_into_libra(&cfg.address)?)
+    } else if cfg.address.starts_with("0x") {
+        AccountAddress::from_hex_literal(&cfg.address)
+    } else if let Ok(addr) = lang::compiler::ss58::ss58_to_libra(&cfg.address) {
+        debug!("address decoded: {:}", addr);
+        AccountAddress::from_hex_literal(&addr)
     } else {
-        // TODO: support SS58 addresses,
-        // test with Alice (0xd6c71059dbbe9ad2b0ed3f289738b800836eb425544ce694825285b958ca755e)
+        // fail with from:
         AccountAddress::from_hex_literal(&cfg.address)
     }?;
 
