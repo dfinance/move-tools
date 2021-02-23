@@ -676,8 +676,10 @@ mod test {
             ]
         );
 
-        let (name, tp, args) =
-            TransactionBuilder::parse_call("create_account<0x01::Dfinance::USD>()").unwrap();
+        let (name, tp, args) = TransactionBuilder::parse_call(
+            "create_account<0x01::Dfinance::USD>([true, false], [0x01, 0x02])",
+        )
+        .unwrap();
         assert_eq!(name, "create_account");
         assert_eq!(
             tp,
@@ -688,7 +690,10 @@ mod test {
                 type_params: vec![],
             })]
         );
-        assert_eq!(args, Vec::<String>::new());
+        assert_eq!(
+            args,
+            vec!["[true,false]".to_owned(), "[0x01,0x02]".to_owned()]
+        );
 
         let (name, tp, args) = TransactionBuilder::parse_call("create_account()").unwrap();
         assert_eq!(name, "create_account");
