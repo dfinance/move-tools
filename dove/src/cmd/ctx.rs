@@ -509,7 +509,7 @@ impl<'a> TransactionBuilder<'a> {
         }
 
         Ok((
-            meta.name.to_owned(),
+            meta.name,
             Transaction::new(signers as u8, unit, args, self.type_parameters),
         ))
     }
