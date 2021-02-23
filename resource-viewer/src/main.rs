@@ -7,8 +7,6 @@
 
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate anyhow;
 
 use std::path::{Path, PathBuf};
 use anyhow::{Result, Error, anyhow};

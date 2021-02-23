@@ -4,8 +4,8 @@ use libra::rv;
 use libra::prelude::*;
 use libra::move_core_types::language_storage::StructTag;
 use libra::account::Identifier;
-use rv::{AnnotatedMoveStruct, AnnotatedMoveValue};
 use serde::Serialize;
+use rv::{AnnotatedMoveStruct, AnnotatedMoveValue};
 
 #[cfg(feature = "json-schema")]
 use schemars::{JsonSchema, schema_for, schema::RootSchema};
@@ -51,8 +51,6 @@ enum AnnotatedMoveValueExt {
     Bool(bool),
     Address(#[serde(with = "AccountAddressExt")] AccountAddress),
     Vector(
-        // #[serde(with = "AnnotatedMoveValueExt")]
-        // #[schemars(schema_with = "schema_support::vec_annotated_move_value")]
         #[cfg_attr(
             feature = "json-schema",
             schemars(schema_with = "schema_support::vec_annotated_move_value")

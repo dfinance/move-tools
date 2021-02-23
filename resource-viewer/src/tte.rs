@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use anyhow::{Result, Error, bail};
+use anyhow::{Result, Error, bail, anyhow};
 
 use libra::{
     move_lang::parser::ast::{ModuleAccess_, ModuleIdent_, Type, Type_},
