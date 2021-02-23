@@ -102,6 +102,8 @@ fn run() -> Result<(), Error> {
     let addr = if cfg.address.starts_with(HRP) {
         AccountAddress::from_hex_literal(&bech32_into_libra(&cfg.address)?)
     } else {
+        // TODO: support SS58 addresses,
+        // test with Alice (0xd6c71059dbbe9ad2b0ed3f289738b800836eb425544ce694825285b958ca755e)
         AccountAddress::from_hex_literal(&cfg.address)
     }?;
 
