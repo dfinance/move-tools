@@ -37,7 +37,10 @@ struct AnnotatedMoveStructExt {
     #[cfg_attr(feature = "json-schema", serde(with = "schema_support::StructTagExt"))]
     type_: StructTag,
     // #[schemars(schema_with = "schema_support::vec_identifier_annotated_move_value")]
-    #[cfg_attr(feature = "json-schema", schemars(schema_with = "schema_support::vec_identifier_annotated_move_value"))]
+    #[cfg_attr(
+        feature = "json-schema",
+        schemars(schema_with = "schema_support::vec_identifier_annotated_move_value")
+    )]
     #[serde(serialize_with = "vec_annotated_move_value_mapped::serialize")]
     value: Vec<(Identifier, AnnotatedMoveValue)>,
 }
@@ -55,7 +58,10 @@ enum AnnotatedMoveValueExt {
     Vector(
         // #[serde(with = "AnnotatedMoveValueExt")]
         // #[schemars(schema_with = "schema_support::vec_annotated_move_value")]
-        #[cfg_attr(feature = "json-schema", schemars(schema_with = "schema_support::vec_annotated_move_value"))]
+        #[cfg_attr(
+            feature = "json-schema",
+            schemars(schema_with = "schema_support::vec_annotated_move_value")
+        )]
         #[serde(serialize_with = "vec_annotated_move_value::serialize")]
         Vec<AnnotatedMoveValue>,
     ),
@@ -94,7 +100,7 @@ mod vec_annotated_move_value {
     {
         // #[derive(Serialize, JsonSchema)]
         #[derive(Serialize)]
-#[cfg_attr(feature = "json-schema", derive(JsonSchema))]
+        #[cfg_attr(feature = "json-schema", derive(JsonSchema))]
         struct Helper<'a>(#[serde(with = "AnnotatedMoveValueExt")] &'a AnnotatedMoveValue);
 
         vec.iter()

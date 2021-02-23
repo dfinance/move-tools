@@ -19,7 +19,6 @@ use lang::compiler::bech32::{bech32_into_libra, HRP};
 use libra::rv;
 use move_resource_viewer::{tte, ser, net::*};
 
-
 #[cfg(feature = "json-schema")]
 const JSON_SCHEMA_STDOUT: &str = "-";
 const VERSION: &str = git_hash::crate_version_with_git_hash_short!();

@@ -8,9 +8,8 @@ pub mod tte;
 mod sp_client;
 
 pub mod net {
-    #[cfg(not(feature = "ps_address"))]
+    #[cfg(any(feature = "dfinance_address", feature = "libra_address"))]
     pub use dnclient::blocking::{get_resource, client::DnodeRestClient as NodeClient};
     #[cfg(feature = "ps_address")]
     pub use super::sp_client::*;
 }
-
