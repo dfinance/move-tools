@@ -15,7 +15,6 @@ pub fn produce_json_schema() -> RootSchema {
     schema_for!(AnnotatedMoveStructExt)
 }
 
-// #[derive(Serialize, JsonSchema)]
 #[derive(Serialize)]
 #[cfg_attr(feature = "json-schema", derive(JsonSchema))]
 pub struct AnnotatedMoveStructWrapper {
@@ -26,17 +25,14 @@ pub struct AnnotatedMoveStructWrapper {
     pub result: AnnotatedMoveStruct,
 }
 
-// #[derive(Serialize, JsonSchema)]
 #[derive(Serialize)]
 #[cfg_attr(feature = "json-schema", derive(JsonSchema))]
 #[serde(remote = "rv::AnnotatedMoveStruct")]
 struct AnnotatedMoveStructExt {
     is_resource: bool,
     #[serde(rename = "type")]
-    // #[serde(with = "schema_support::StructTagExt")]
     #[cfg_attr(feature = "json-schema", serde(with = "schema_support::StructTagExt"))]
     type_: StructTag,
-    // #[schemars(schema_with = "schema_support::vec_identifier_annotated_move_value")]
     #[cfg_attr(
         feature = "json-schema",
         schemars(schema_with = "schema_support::vec_identifier_annotated_move_value")
@@ -45,7 +41,6 @@ struct AnnotatedMoveStructExt {
     value: Vec<(Identifier, AnnotatedMoveValue)>,
 }
 
-// #[derive(Serialize, JsonSchema)]
 #[derive(Serialize)]
 #[cfg_attr(feature = "json-schema", derive(JsonSchema))]
 #[serde(remote = "rv::AnnotatedMoveValue")]
@@ -69,7 +64,6 @@ enum AnnotatedMoveValueExt {
     Struct(#[serde(with = "AnnotatedMoveStructExt")] AnnotatedMoveStruct),
 }
 
-// #[derive(Serialize, JsonSchema)]
 #[derive(Serialize)]
 #[cfg_attr(feature = "json-schema", derive(JsonSchema))]
 #[serde(remote = "AccountAddress")]
@@ -82,7 +76,6 @@ impl AccountAddressExt {
     }
 }
 
-// #[derive(Serialize, JsonSchema)]
 #[derive(Serialize)]
 #[cfg_attr(feature = "json-schema", derive(JsonSchema))]
 #[serde(remote = "Identifier")]
@@ -98,7 +91,6 @@ mod vec_annotated_move_value {
     where
         S: Serializer,
     {
-        // #[derive(Serialize, JsonSchema)]
         #[derive(Serialize)]
         #[cfg_attr(feature = "json-schema", derive(JsonSchema))]
         struct Helper<'a>(#[serde(with = "AnnotatedMoveValueExt")] &'a AnnotatedMoveValue);
@@ -124,7 +116,6 @@ mod vec_annotated_move_value_mapped {
     where
         S: Serializer,
     {
-        // #[derive(Serialize, JsonSchema)]
         #[derive(Serialize)]
         #[cfg_attr(feature = "json-schema", derive(JsonSchema))]
         struct Helper<'a> {
@@ -150,8 +141,6 @@ mod schema_support {
     };
 
     #[derive(Serialize, JsonSchema)]
-    // #[derive(Serialize)]
-    // #[cfg_attr(feature = "json-schema", derive(JsonSchema))]
     #[serde(remote = "StructTag")]
     pub struct StructTagExt {
         #[serde(with = "AccountAddressExt")]
@@ -165,8 +154,6 @@ mod schema_support {
     }
 
     #[derive(Serialize, JsonSchema)]
-    // #[derive(Serialize)]
-    // #[cfg_attr(feature = "json-schema", derive(JsonSchema))]
     #[serde(remote = "TypeTag")]
     pub enum TypeTagExt {
         Bool,

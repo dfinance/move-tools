@@ -27,16 +27,8 @@ dnclient = { path = "../common/dnode-rest-client", package = "dnode-rest-client"
 # ps:
 [dependencies.substrate-api-client]
 git = "https://github.com/scs/substrate-api-client.git"
-# rev = "b238501673c44bd3ccf507ee1f69a69f6d5c69a4"
 rev = "62afbac0be1928681d8c70565fa0cc39a92cf4c8"
 optional = true
-# [dependencies.sp-core]
-# version = "3.0"
-# optional = true
-# [dependencies.keyring]
-# git = "https://github.com/paritytech/substrate.git"
-# rev = "38f723bf5dae257220fc25d4e86759f4a664d50f"
-# package = "sp-keyring"
 [dependencies.keyring]
 version = '2.0.0'
 package = "sp-keyring"
@@ -52,7 +44,6 @@ env_logger = "0.8.2"
 default = [
     "json-schema",
     "dfinance_address",
-    # "ps_address",
 ]
 
 libra_address = [
