@@ -40,7 +40,10 @@ struct Cfg {
 
     /// Time: maximum block number
     #[clap(long, short)]
+    #[cfg(not(feature = "ps_address"))]
     height: Option<u128>,
+    #[cfg(feature = "ps_address")]
+    height: Option<sp_core::H256>,
 
     /// Output file path
     #[clap(long, short)]
@@ -127,7 +130,18 @@ fn run() -> Result<(), Error> {
                     annotator
                         .view_resource(&st, &bytes)
                         .and_then(|result| {
-                            let height = resp.block();
+                            let height = {
+                                let height;
+                                #[cfg(feature = "ps_address")]
+                                {
+                                    height = format!("{:#x}", resp.block());
+                                }
+                                #[cfg(not(feature = "ps_address"))]
+                                {
+                                    height = resp.block();
+                                }
+                                height
+                            };
                             if json {
                                 serde_json::ser::to_string_pretty(
                                     &ser::AnnotatedMoveStructWrapper { height, result },

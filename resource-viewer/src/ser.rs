@@ -19,7 +19,10 @@ pub fn produce_json_schema() -> RootSchema {
 #[cfg_attr(feature = "json-schema", derive(JsonSchema))]
 pub struct AnnotatedMoveStructWrapper {
     /// Block number, current for the state
+    #[cfg(not(feature = "ps_address"))]
     pub height: u128,
+    #[cfg(feature = "ps_address")]
+    pub height: String,
 
     #[serde(with = "AnnotatedMoveStructExt")]
     pub result: AnnotatedMoveStruct,

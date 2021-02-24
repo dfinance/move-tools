@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use log::{error, info, debug};
+use log::*;
 use keyring::sr25519::sr25519::Pair;
 use libra::move_core_types::language_storage::StructTag;
 use substrate_api_client::Api;
@@ -9,26 +9,37 @@ use anyhow::{Error, Result};
 use http::Uri;
 
 /// Block number
-pub type Block = u128;
+pub type Block = sp_core::H256;
 pub struct BytesForBlock(Vec<u8>, Block);
 
-#[allow(dead_code)]
-impl BytesForBlock {
-    pub fn block(&self) -> u128 {
-        self.1
+pub const MODULE: &str = "Mvm";
+pub const STORAGE: &str = "VMStorage";
+
+pub fn data_request_with(
+    client: &mut Api<Pair>,
+    path: Vec<u8>,
+    height: Option<Block>,
+) -> Result<BytesForBlock> {
+    let storagekey = client
+        .metadata
+        .storage_map_key::<Vec<u8>, Vec<u8>>(MODULE, STORAGE, path)
+        .unwrap();
+
+    if height.is_some() {
+        warn!("Requests with block height doesn't supported yet.");
     }
 
-    #[inline]
-    pub fn bytes(&self) -> &[u8] {
-        self.as_bytes()
-    }
-    pub fn as_bytes(&self) -> &[u8] {
-        &self.0
-    }
+    let head = client
+        .get_finalized_head()
+        .ok_or_else(|| Error::msg("Cannot get finalized head"))?;
 
-    pub fn into_bytes(self) -> Vec<u8> {
-        self.0
-    }
+    debug!("storage key: 0x{}", hex::encode(storagekey.0.clone()));
+    let result: Option<Vec<u8>> = client.get_storage_by_key_hash(storagekey, None);
+    debug!("data: {:?}", result);
+
+    result
+        .ok_or_else(|| Error::msg("not found"))
+        .map(|result| BytesForBlock(result, head))
 }
 
 pub fn get_resource(
@@ -38,6 +49,15 @@ pub fn get_resource(
 ) -> Result<BytesForBlock> {
     let mut client = Api::new(host.to_string());
     get_resource_with(&mut client, key, height)
+}
+
+pub fn get_resource_with(
+    client: &mut Api<Pair>,
+    key: &ResourceKey,
+    height: Option<Block>,
+) -> Result<BytesForBlock> {
+    let path = AccessPath::resource_access_path(key).path;
+    data_request_with(client, path, height)
 }
 
 #[allow(dead_code)]
@@ -60,47 +80,23 @@ pub fn get_module_with(
     data_request_with(client, path, height)
 }
 
-const MODULE: &str = "Mvm";
+#[allow(dead_code)]
+impl BytesForBlock {
+    pub fn block(&self) -> Block {
+        self.1
+    }
 
-pub fn data_request_with(
-    client: &mut Api<Pair>,
-    path: Vec<u8>,
-    _height: Option<Block>,
-) -> Result<BytesForBlock> {
-    let storagekey = client
-        .metadata
-        .storage_map_key::<Vec<u8>, Vec<u8>>(MODULE, "VMStorage", path)
-        .unwrap();
-    debug!("storagekey {:?}", storagekey);
-    debug!("storage key is: 0x{}", hex::encode(storagekey.0.clone()));
-    let result: Option<Vec<u8>> = client.get_storage_by_key_hash(storagekey, None);
-    info!("data: {:?}", result);
+    #[inline]
+    pub fn bytes(&self) -> &[u8] {
+        self.as_bytes()
+    }
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
 
-    result
-        .ok_or_else(|| Error::msg("not found"))
-        .map(|result| BytesForBlock(result, 0))
-}
-
-pub fn get_resource_with(
-    client: &mut Api<Pair>,
-    key: &ResourceKey,
-    _height: Option<Block>,
-) -> Result<BytesForBlock> {
-    let path = AccessPath::resource_access_path(key);
-    let res_key = path.path;
-
-    let storagekey = client
-        .metadata
-        .storage_map_key::<Vec<u8>, Vec<u8>>(MODULE, "VMStorage", res_key)
-        .unwrap();
-    debug!("storagekey {:?}", storagekey);
-    debug!("storage key is: 0x{}", hex::encode(storagekey.0.clone()));
-    let result: Option<Vec<u8>> = client.get_storage_by_key_hash(storagekey, None);
-    info!("data: {:?}", result);
-
-    result
-        .ok_or_else(|| Error::msg("not found"))
-        .map(|result| BytesForBlock(result, 0))
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.0
+    }
 }
 
 pub struct NodeClient {
