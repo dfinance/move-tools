@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use anyhow::{Result, Error, bail, anyhow};
 
+use libra::move_ir_types::location::Loc;
 use libra::{
     move_lang::parser::ast::{ModuleAccess_, ModuleIdent_, Type, Type_},
     move_core_types::language_storage::StructTag,
@@ -115,7 +116,15 @@ pub fn unwrap_spanned_ty(ty: Type) -> Result<TypeTag, Error> {
 }
 
 pub fn parse(s: &str) -> Result<TypeTagQuery, Error> {
-    let map_err = |err| anyhow!("{:?}", err);
+    let map_err = |err: Vec<(Loc, String)>| {
+        anyhow!("Query parsing error:\n\t{:}", {
+            let strs: Vec<_> = err
+                .into_iter()
+                .map(|(loc, msg)| format!("{}: {}", loc.span(), msg))
+                .collect();
+            strs.join("\n\t")
+        })
+    };
 
     let q = {
         #[cfg(feature = "ps_address")]
