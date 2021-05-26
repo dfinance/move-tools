@@ -1,14 +1,12 @@
 use fs_extra::file::write_all;
 mod helper;
-use crate::helper::{execute_dove_at, project_start_new_and_build, project_remove, TErrPanicFormat};
-
+use crate::helper::{execute_dove_at, project_start_new_and_build, project_remove};
 /// $ dove run sdemo.move
 #[test]
 fn test_cmd_dove_run_without_arguments() {
     // Path to dove folder, project and project name
     let project_name = "demoproject_6";
     let project_folder = project_start_new_and_build(project_name);
-
     // project_folder/modules/mdemo.move
     write_all(
         &project_folder.join("modules/mdemo.move"),
@@ -32,18 +30,15 @@ fn test_cmd_dove_run_without_arguments() {
             }",
     )
     .unwrap();
-    execute_dove_at(&["dove", "run", "sdemo.move"], &project_folder).err_panic_with_formatted();
-
+    execute_dove_at(&["dove", "run", "sdemo.move"], &project_folder).unwrap();
     project_remove(&project_folder);
 }
-
 /// $ dove run sdemo.move -a 3 5
 #[test]
 fn test_cmd_dove_run_with_arguments() {
     // Path to dove folder, project and project name
     let project_name = "demoproject_8";
     let project_folder = project_start_new_and_build(project_name);
-
     // project_folder/scripts/sdemo.move
     write_all(
         &project_folder.join("scripts/sdemo.move"),
@@ -58,18 +53,15 @@ fn test_cmd_dove_run_with_arguments() {
         &["dove", "run", "sdemo.move", "-a", "3", "5"],
         &project_folder,
     )
-    .err_panic_with_formatted();
-
+    .unwrap();
     project_remove(&project_folder);
 }
-
 /// $ dove run sdemo.move --signers 0x1
 #[test]
 fn test_cmd_dove_run_with_signers() {
     // Path to dove folder, project and project name
     let project_name = "demoproject_5";
     let project_folder = project_start_new_and_build(project_name);
-
     // project_folder/scripts/sdemo.move
     write_all(
         &project_folder.join("scripts/sdemo.move"),
@@ -82,7 +74,6 @@ fn test_cmd_dove_run_with_signers() {
         &["dove", "run", "sdemo.move", "--signers", "0x1"],
         &project_folder,
     )
-    .err_panic_with_formatted();
-
+    .unwrap();
     project_remove(&project_folder);
 }

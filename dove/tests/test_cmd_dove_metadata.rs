@@ -1,9 +1,7 @@
 mod helper;
 use crate::helper::{
-    project_remove, project_new_with_args, project_start, project_build, execute_dove_at,
-    TErrPanicFormat,
+    execute_dove_at, project_remove, project_new_with_args, project_start, project_build,
 };
-
 /// $ dove metadata
 #[test]
 fn test_cmd_dove_metadata() {
@@ -18,7 +16,7 @@ fn test_cmd_dove_metadata() {
         "5Csxuy81dNEVYbRA9K7tyHypu7PivHmwCZSKxcbU78Cy2v7v",
         "https://localhost/api",
     );
-    project_build(&project_folder).err_panic_with_formatted();
-    execute_dove_at(&["dove", "metadata"], &project_folder).err_panic_with_formatted();
+    project_build(&project_folder).unwrap();
+    execute_dove_at(&["dove", "metadata"], &project_folder).unwrap();
     project_remove(&project_folder);
 }

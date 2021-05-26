@@ -1,16 +1,13 @@
 use fs_extra::file::write_all;
-mod helper;
-use crate::helper::{
-    project_start_new_and_build, project_remove, execute_dove_at, TErrPanicFormat, TOkPanicFormat,
-};
 
+mod helper;
+use crate::helper::{execute_dove_at, project_start_new_and_build, project_remove};
 /// $ dove test
 #[test]
 fn test_cmd_dove_test_run_all_test_in_project() {
     // Path to dove folder, project and project name
     let project_name = "demoproject_10";
     let project_folder = project_start_new_and_build(project_name);
-
     // project_folder/modules/mdemo.move
     write_all(
         &project_folder.join("modules/mdemo.move"),
@@ -33,17 +30,15 @@ fn test_cmd_dove_test_run_all_test_in_project() {
             }",
     )
     .unwrap();
-    execute_dove_at(&["dove", "test"], &project_folder).err_panic_with_formatted();
+    execute_dove_at(&["dove", "test"], &project_folder).unwrap();
     project_remove(&project_folder);
 }
-
 /// $ dove test -k test_2
 #[test]
 fn test_cmd_dove_test_run_one_test_in_project() {
     // Path to dove folder, project and project name
     let project_name = "demoproject_11";
     let project_folder = project_start_new_and_build(project_name);
-
     // project_folder/modules/mdemo.move
     write_all(
         &project_folder.join("modules/mdemo.move"),
@@ -76,18 +71,15 @@ fn test_cmd_dove_test_run_one_test_in_project() {
             }",
     )
     .unwrap();
-    execute_dove_at(&["dove", "test", "-k", "test_2"], &project_folder)
-        .err_panic_with_formatted();
+    execute_dove_at(&["dove", "test", "-k", "test_2"], &project_folder).unwrap();
     project_remove(&project_folder);
 }
-
 /// $ dove test
 #[test]
 fn test_cmd_dove_test_fail_test_in_project() {
     // Path to dove folder, project and project name
     let project_name = "demoproject_12";
     let project_folder = project_start_new_and_build(project_name);
-
     // project_folder/tests/test_1.move
     write_all(
         &project_folder.join("tests/test_1.move"),
@@ -98,6 +90,6 @@ fn test_cmd_dove_test_fail_test_in_project() {
             }",
     )
     .unwrap();
-    execute_dove_at(&["dove", "test"], &project_folder).ok_panic_with_formatted();
+    assert!(execute_dove_at(&["dove", "test"], &project_folder).is_err());
     project_remove(&project_folder);
 }
