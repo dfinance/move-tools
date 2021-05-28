@@ -20,9 +20,11 @@ use move_core_types::account_address::AccountAddress;
 use lang::lexer::unwrap_spanned_ty;
 use lang::compiler::mut_string::MutString;
 use move_core_types::value::MoveValue;
+use crate::stdoutln;
 
 /// Create transaction.
 #[derive(StructOpt, Debug)]
+#[structopt(setting(structopt::clap::AppSettings::ColoredHelp))]
 pub struct CreateTransactionCmd {
     #[structopt(help = "Script call declaration.\
      Example: 'create_balance<0x01::Dfinance::USD>([10,10], true, 68656c6c6f776f726c64, 100)'")]
@@ -47,6 +49,8 @@ pub struct CreateTransactionCmd {
         short = "a"
     )]
     args: Option<Vec<String>>,
+    #[structopt(long, hidden = true)]
+    color: Option<String>,
 }
 
 impl Cmd for CreateTransactionCmd {
@@ -54,6 +58,7 @@ impl Cmd for CreateTransactionCmd {
         let output_filename = self.output.take();
 
         let builder = TransactionBuilder::new(self, &ctx)?;
+        stdoutln!("Build project index...");
         let (script_name, transaction) = builder.build()?;
 
         store_transaction(&ctx, &output_filename.unwrap_or(script_name), transaction)
@@ -685,7 +690,7 @@ fn store_transaction(ctx: &Context, name: &str, tx: Transaction) -> Result<(), E
     if tx_file.exists() {
         fs::remove_file(&tx_file)?;
     }
-    println!("Store transaction:{:?}", tx_file);
+    stdoutln!("Store transaction:{:?}", tx_file);
     Ok(fs::write(&tx_file, bcs::to_bytes(&tx)?)?)
 }
 

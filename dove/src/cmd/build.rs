@@ -18,9 +18,12 @@ use lang::flow::builder::{Artifacts, MoveBuilder, StaticResolver};
 
 use crate::cmd::{Cmd, load_dependencies};
 use crate::context::Context;
+use crate::stdoutln;
+use crate::stdout::colorize::good;
 
 /// Build dependencies.
 #[derive(StructOpt, Debug)]
+#[structopt(setting(structopt::clap::AppSettings::ColoredHelp))]
 pub struct Build {
     #[structopt(
         help = "Add transitive dependencies to the target.",
@@ -51,6 +54,8 @@ pub struct Build {
         long = "unordered"
     )]
     unordered: bool,
+    #[structopt(long, hidden = true)]
+    color: Option<String>,
 }
 
 impl Cmd for Build {
@@ -60,8 +65,10 @@ impl Cmd for Build {
             &ctx.manifest.layout.module_dir,
         ]);
 
+        stdoutln!("Build project index...");
         let mut index = ctx.build_index()?;
 
+        stdoutln!("Load dependencies by set of path...");
         let dep_set = index.make_dependency_set(&dirs)?;
         let mut dep_list = load_dependencies(dep_set)?;
 
@@ -89,6 +96,7 @@ impl Cmd for Build {
 
         let source_ref = source_list.iter().collect::<Vec<_>>();
 
+        stdoutln!("Build move files...");
         let sender = ctx.account_address()?;
         let Artifacts { files, prog } = MoveBuilder::new(
             ctx.dialect.as_ref(),
@@ -104,7 +112,10 @@ impl Cmd for Build {
                 Err(anyhow!("could not compile:{}", ctx.project_name()))
             }
             Ok(compiled_units) => {
-                self.verify_and_store(&ctx, files, compiled_units, &exclude_modules)
+                stdoutln!("Verify and store compilation results...");
+                self.verify_and_store(&ctx, files, compiled_units, &exclude_modules)?;
+                stdoutln!("Project is {}", good("finished"));
+                Ok(())
             }
         }
     }
@@ -163,11 +174,11 @@ impl Build {
                     }
                 };
 
-                println!("Package content: ");
+                stdoutln!("Package content: ");
                 for unit in &units {
-                    println!("\t{}", unit.name());
+                    stdoutln!("\t{}", unit.name());
                 }
-                println!("Store: {:?}", pac_file.as_os_str());
+                stdoutln!("Store: {:?}", pac_file.as_os_str());
                 let package = ModulePackage::with_units(units);
                 File::create(&pac_file)?.write_all(&package.encode()?)?
             } else {

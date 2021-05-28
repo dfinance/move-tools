@@ -14,8 +14,12 @@ use crate::cmd::Cmd;
 use crate::context::{Context, get_context};
 use crate::manifest::{DoveToml, MANIFEST};
 
+use crate::stdoutln;
+use crate::stdout::colorize::good;
+
 /// Init project command.
 #[derive(StructOpt, Debug)]
+#[structopt(setting(structopt::clap::AppSettings::ColoredHelp))]
 pub struct Init {
     #[structopt(
         help = "Basic uri to blockchain api.",
@@ -39,6 +43,8 @@ pub struct Init {
         short = "d"
     )]
     dialect: String,
+    #[structopt(long, hidden = true)]
+    color: Option<String>,
 }
 
 impl Init {
@@ -48,6 +54,7 @@ impl Init {
             repository,
             address,
             dialect,
+            color: None,
         }
     }
 }
@@ -65,15 +72,23 @@ impl Cmd for Init {
         }
         let dialect = DialectName::from_str(&self.dialect)?.get_dialect();
 
+        stdoutln!(
+            "Creating default directories(to omit those, use --minimal): \n\
+            \t./modules\n\
+            \t./scripts\n\
+            \t./tests"
+        );
         let name = ctx
             .project_dir
             .file_name()
             .and_then(|name| name.to_str())
             .ok_or_else(|| anyhow!("Failed to extract directory name."))?;
+
         fs::create_dir_all(ctx.path_for(&ctx.manifest.layout.module_dir))?;
         fs::create_dir_all(ctx.path_for(&ctx.manifest.layout.script_dir))?;
         fs::create_dir_all(ctx.path_for(&ctx.manifest.layout.tests_dir))?;
 
+        stdoutln!("Generating default Dove.toml file...");
         let mut f = OpenOptions::new()
             .create(true)
             .read(true)
@@ -99,11 +114,17 @@ impl Cmd for Init {
                 &mut f,
                 r#"
 dependencies = [
-    {{ git = "https://github.com/pontem-network/move-stdlib", tag = "v0.1.2" }}
+    {{ git = "https://github.com/pontem-network/move-stdlib", branch = "move-1.2" }}
 ]
 "#
             )?;
         }
+        stdoutln!(
+            "Projest {} initislized in {}",
+            good("successfully"),
+            ctx.project_dir.display()
+        );
+
         Ok(())
     }
 }
